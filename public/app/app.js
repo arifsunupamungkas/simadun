@@ -547,73 +547,129 @@ function printDocSPT(encodedData) {
   // DEFAULT KOP JIKA BELUM ADA DI PENGATURAN
   var k1 = localStorage.getItem('simadun_kop1') || 'PEMERINTAH KABUPATEN MADIUN';
   var k2 = localStorage.getItem('simadun_kop2') || 'INSPEKTORAT';
-  var k3 = localStorage.getItem('simadun_kop3') || 'Pusat Pemerintahan Mejayan, Jl. Alun-Alun Utara No. 4, Caruban';
-  var tKota = localStorage.getItem('simadun_ttd_kota') || 'Madiun';
-  var tJab = localStorage.getItem('simadun_ttd_jabatan') || 'Inspektur Kabupaten Madiun,';
-  var tNama = localStorage.getItem('simadun_ttd_nama') || '________________________';
-  var tNip = localStorage.getItem('simadun_ttd_nip') || '........................................';
+  var k3 = localStorage.getItem('simadun_kop3') || 'Jalan M.T. Haryono, Caruban, Jawa Timur 63153, Telepon (0351) 453412,\nLaman www.inspektorat.madiunkab.go.id, Pos-el madiunkab.inspektorat@gmail.com';
+  var tKota = localStorage.getItem('simadun_ttd_kota') || 'Caruban';
+  var tJab = localStorage.getItem('simadun_ttd_jabatan') || 'Inspektur\\nKabupaten Madiun';
+  var tNama = localStorage.getItem('simadun_ttd_nama') || 'Joko Lelono, A.P., M.H., CGCAE';
+  var tNip = localStorage.getItem('simadun_ttd_nip') || '197306081993111001';
+
+  var logoKiri = localStorage.getItem('simadun_logo_kiri_data');
+  var logoKanan = localStorage.getItem('simadun_logo_kanan_data');
+  var logoPos = localStorage.getItem('simadun_logo_pos') || 'left';
+  var logoSize = localStorage.getItem('simadun_logo_size') || '90';
+  var logoKiriSize = localStorage.getItem('simadun_logo_kiri_size') || logoSize;
+  var logoKananSize = localStorage.getItem('simadun_logo_kanan_size') || logoSize;
+  var fontSize = localStorage.getItem('simadun_font_size') || '11';
+  var penutup = localStorage.getItem('simadun_penutup') || 'Demikian surat tugas ini dibuat untuk dilaksanakan dengan penuh tanggung jawab dan dipergunakan sebagaimana mestinya.';
+  
+  var defaultLogo = BASE_URL + '/assets/icon-512.png';
+  var leftImgSrc = logoKiri || (logoPos === 'left' ? defaultLogo : '');
+  var rightImgSrc = logoKanan || (logoPos === 'right' ? defaultLogo : '');
+  var leftImgHtml = leftImgSrc ? '<img src="' + leftImgSrc + '" style="width:' + (logoKiri ? logoKiriSize : logoSize) + 'px;margin-right:15px;object-fit:contain;" />' : '';
+  var rightImgHtml = rightImgSrc ? '<img src="' + rightImgSrc + '" style="width:' + (logoKanan ? logoKananSize : logoSize) + 'px;margin-left:15px;object-fit:contain;" />' : '';
+
+  // Render K3 with line breaks
+  var k3Html = k3.replace(/\\n/g, '<br>');
+  var tJabHtml = tJab.replace(/\\n/g, '<br>');
 
   var w = window.open('', '_blank');
   w.document.write(`
     <html><head><title>Cetak SPT - ${d['Nomor SPT'] || ''}</title>
     <style>
-      body { font-family: 'Times New Roman', Times, serif; padding: 40px; line-height: 1.5; color: #000; }
-      .kop { display: flex; align-items: center; justify-content: center; border-bottom: 4px solid #000; padding-bottom: 12px; margin-bottom: 2px; }
-      .kop-border { border-top: 1px solid #000; width: 100%; height: 1px; margin-bottom: 30px; }
-      .kop img { width: 90px; margin-right: 20px; }
-      .kop-text { text-align: center; line-height: 1.2; }
-      .kop-text h2 { margin: 0; font-size: 16pt; font-weight: normal; }
-      .kop-text h1 { margin: 4px 0; font-size: 20pt; font-weight: bold; }
-      .kop-text p { margin: 0; font-size: 11pt; }
-      .title { text-align: center; margin-bottom: 30px; }
-      .title h3 { margin: 0; text-decoration: underline; font-size: 14pt; }
-      .title p { margin: 4px 0 0; font-size: 12pt; }
-      .content { font-size: 12pt; margin-left: 20px; margin-right: 20px; }
-      .row { display: flex; margin-bottom: 8px; }
-      .label { width: 150px; font-weight: normal; }
-      .colon { width: 20px; }
-      .val { flex: 1; text-align: justify; }
-      .sig { margin-top: 60px; display: flex; justify-content: flex-end; }
-      .sig-box { text-align: left; width: 330px; }
-      @media print { body { padding: 0; } }
+      @media print { 
+        body { padding: 0 !important; margin: 15mm 20mm !important; } 
+        @page { size: A4 portrait; margin: 0; }
+      }
+      body { font-family: Arial, Helvetica, sans-serif; padding: 40px; margin: 0; line-height: 1.4; color: #000; font-size: ${fontSize}pt; }
+      .kop { display: flex; align-items: center; justify-content: center; margin-bottom: 4px; }
+      .kop-text { text-align: center; }
+      .kop-text h2 { margin: 0; font-size: calc(${fontSize}pt + 4pt); font-weight: normal; }
+      .kop-text h1 { margin: 2px 0; font-size: calc(${fontSize}pt + 8pt); font-weight: bold; letter-spacing: 4px; }
+      .kop-text p { margin: 0; font-size: calc(${fontSize}pt - 1pt); }
+      .kop-border { border-top: 3px solid #000; border-bottom: 1px solid #000; height: 1px; margin-bottom: 25px; }
+      
+      .title { text-align: center; margin-bottom: 25px; }
+      .title h3 { margin: 0; font-size: calc(${fontSize}pt + 2pt); font-weight: normal; letter-spacing: 5px; }
+      .title p { margin: 8px 0 0; font-size: ${fontSize}pt; }
+      
+      .content-table { width: 100%; border-collapse: collapse; border: none; margin-bottom: 15px; }
+      .content-table td { padding: 4px 0; vertical-align: top; }
+      .col-label { width: 80px; }
+      .col-colon { width: 20px; text-align: center; }
+      .col-val { text-align: justify; }
+
+      .m-center { text-align: center; margin: 15px 0; }
+      .m-p { margin-top: 15px; margin-bottom: 15px; text-align: justify; }
+      
+      .kepada-grid { display: grid; grid-template-columns: 20px 1fr; gap: 4px 8px; }
+      .kepada-item { display: contents; }
+      
+      .sig-container { display: flex; justify-content: flex-end; margin-top: 30px; }
+      .sig-box { width: 350px; }
+      .sig-table { width: 100%; border: none; border-collapse: collapse; }
+      .sig-table td { padding: 2px 0; vertical-align: top; }
     </style></head><body>
       <div class="kop">
-        <img src="${BASE_URL}/assets/icon-512.png" />
+        ${leftImgHtml}
         <div class="kop-text">
           <h2>${k1}</h2>
           <h1>${k2}</h1>
-          <p>${k3}</p>
+          <p>${k3Html}</p>
         </div>
+        ${rightImgHtml}
       </div>
       <div class="kop-border"></div>
       
       <div class="title">
-        <h3>SURAT PERINTAH TUGAS</h3>
-        <p>Nomor: ${d['Nomor SPT'] || '-'}</p>
+        <h3>SURAT TUGAS</h3>
+        <p>NOMOR : ${d['Nomor SPT'] || '-'}</p>
       </div>
 
-      <div class="content">
-        <p style="margin-bottom: 16px;">Yang bertanda tangan di bawah ini, menginstruksikan kepada:</p>
-        <div class="row"><div class="label">Nama</div><div class="colon">:</div><div class="val"><strong>${d['Nama'] || '-'}</strong></div></div>
-        <div class="row"><div class="label">NIP</div><div class="colon">:</div><div class="val">${d['NIP'] || '-'}</div></div>
-        <div class="row"><div class="label">Jabatan</div><div class="colon">:</div><div class="val">${d['Jabatan'] || '-'}</div></div>
-        
-        <p style="margin-top:20px; margin-bottom: 12px;">Untuk melaksanakan tugas:</p>
-        <div class="row"><div class="label">Tujuan</div><div class="colon">:</div><div class="val">${d['Tujuan'] || '-'}</div></div>
-        <div class="row"><div class="label">Keperluan</div><div class="colon">:</div><div class="val">${d['Keperluan'] || '-'}</div></div>
-        <div class="row"><div class="label">Waktu Tunda</div><div class="colon">:</div><div class="val">${fmtDate(d['Tgl Berangkat'] || d['Tanggal Berangkat'])} s/d ${fmtDate(d['Tgl Kembali'] || d['Tanggal Kembali'])}</div></div>
-        <div class="row"><div class="label">Keterangan</div><div class="colon">:</div><div class="val">${d['Keterangan'] || '-'}</div></div>
+      <table class="content-table">
+        <tr>
+          <td class="col-label">Dasar</td>
+          <td class="col-colon">:</td>
+          <td class="col-val">${d['Keterangan'] || '-'}</td>
+        </tr>
+      </table>
 
-        <p style="margin-top: 24px;">Demikian Surat Perintah Tugas ini dibuat untuk dilaksanakan dengan penuh tanggung jawab.</p>
-      </div>
+      <div class="m-center">MEMERINTAHKAN:</div>
 
-      <div class="sig">
+      <table class="content-table">
+        <tr>
+          <td class="col-label">Kepada</td>
+          <td class="col-colon">:</td>
+          <td class="col-val">
+            <div class="kepada-grid">
+              <div class="kepada-item"><span>1.</span><span>${d['Nama'] || '-'}<br>NIP ${d['NIP'] || '-'}<br>${d['Jabatan'] || '-'}</span></div>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td class="col-label">Untuk</td>
+          <td class="col-colon">:</td>
+          <td class="col-val">${d['Keperluan'] || '-'}</td>
+        </tr>
+        <tr>
+          <td class="col-label">Tanggal</td>
+          <td class="col-colon">:</td>
+          <td class="col-val">${fmtDate(d['Tgl Berangkat'] || d['Tanggal Berangkat'])} sd ${fmtDate(d['Tgl Kembali'] || d['Tanggal Kembali'])}</td>
+        </tr>
+      </table>
+
+      <p class="m-p">APIP dalam melaksanakan tugas tidak menerima/meminta gratifikasi dan suap.</p>
+      <p class="m-p">${penutup}</p>
+
+      <div class="sig-container">
         <div class="sig-box">
-          <p>${tKota}, ${new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}<br/>
-          <span style="font-weight:bold;">${tJab}</span></p>
+          <table class="sig-table">
+            <tr><td style="width:90px">Ditetapkan di</td><td style="width:15px">:</td><td>${tKota}</td></tr>
+            <tr><td>Pada tanggal</td><td>:</td><td>${new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</td></tr>
+          </table>
+          <p style="margin: 10px 0 0 0;">${tJabHtml}</p>
           <br/><br/><br/><br/>
           <p style="text-decoration: underline; font-weight: bold; margin: 0;">${tNama}</p>
-          <p style="margin: 0;">NIP. ${tNip}</p>
+          <p style="margin: 0;">NIP ${tNip}</p>
         </div>
       </div>
     </body></html>
@@ -947,18 +1003,17 @@ function resetKopSettings() {
 function updateSptPreview() {
   var k1 = v('set-kop1') || 'PEMERINTAH KABUPATEN MADIUN';
   var k2 = v('set-kop2') || 'INSPEKTORAT';
-  var k3 = v('set-kop3') || 'Pusat Pemerintahan Mejayan, Jl. Alun-Alun Utara No. 4, Caruban';
+  var k3 = v('set-kop3') || 'Jalan M.T. Haryono, Caruban, Jawa Timur 63153, Telepon (0351) 453412,\\nLaman www.inspektorat.madiunkab.go.id, Pos-el madiunkab.inspektorat@gmail.com';
   var kTelp = v('set-kop-telp') || '';
-  var tKota = v('set-ttd-kota') || 'Madiun';
-  var tJab = v('set-ttd-jabatan') || 'Inspektur Kabupaten Madiun,';
-  var tNama = v('set-ttd-nama') || '________________________';
-  var tNip = v('set-ttd-nip') || '........................................';
+  var tKota = v('set-ttd-kota') || 'Caruban';
+  var tJab = v('set-ttd-jabatan') || 'Inspektur\\nKabupaten Madiun';
+  var tNama = v('set-ttd-nama') || 'Joko Lelono, A.P., M.H., CGCAE';
+  var tNip = v('set-ttd-nip') || '197306081993111001';
   var logoPos = (document.getElementById('set-logo-pos') ? document.getElementById('set-logo-pos').value : 'left');
   var logoSize = v('set-logo-size') || '90';
-  var fontSize = v('set-font-size') || '12';
-  var penutup = v('set-penutup') || 'Demikian Surat Perintah Tugas ini dibuat untuk dilaksanakan dengan penuh tanggung jawab.';
+  var fontSize = v('set-font-size') || '11';
+  var penutup = v('set-penutup') || 'Demikian surat tugas ini dibuat untuk dilaksanakan dengan penuh tanggung jawab dan dipergunakan sebagaimana mestinya.';
 
-  var kopHtml;
   var logoKiri = localStorage.getItem('simadun_logo_kiri_data');
   var logoKanan = localStorage.getItem('simadun_logo_kanan_data');
   var logoKiriSize = v('set-logo-kiri-size') || localStorage.getItem('simadun_logo_kiri_size') || logoSize;
@@ -968,47 +1023,64 @@ function updateSptPreview() {
   var leftImgSrc = logoKiri || (logoPos === 'left' ? defaultLogo : '');
   var rightImgSrc = logoKanan || (logoPos === 'right' ? defaultLogo : '');
 
-  var leftImgHtml = leftImgSrc ? '<img src="' + leftImgSrc + '" style="width:' + (logoKiri ? logoKiriSize : logoSize) + 'px;margin-right:16px;" />' : '';
-  var rightImgHtml = rightImgSrc ? '<img src="' + rightImgSrc + '" style="width:' + (logoKanan ? logoKananSize : logoSize) + 'px;margin-left:16px;" />' : '';
+  var leftImgHtml = leftImgSrc ? '<img src="' + leftImgSrc + '" style="width:' + (logoKiri ? logoKiriSize : logoSize) + 'px;margin-right:15px;object-fit:contain;" />' : '';
+  var rightImgHtml = rightImgSrc ? '<img src="' + rightImgSrc + '" style="width:' + (logoKanan ? logoKananSize : logoSize) + 'px;margin-left:15px;object-fit:contain;" />' : '';
   
-  kopHtml = leftImgHtml + '<div class="kop-text"><h2>' + k1 + '</h2><h1>' + k2 + '</h1><p>' + k3 + (kTelp ? '<br>Telp: ' + kTelp : '') + '</p></div>' + rightImgHtml;
+  var k3Html = k3.replace(/\\n/g, '<br>') + (kTelp ? '<br>Telp: ' + kTelp : '');
+  var tJabHtml = tJab.replace(/\\n/g, '<br>');
+
+  var kopHtml = leftImgHtml + '<div class="kop-text"><h2>' + k1 + '</h2><h1>' + k2 + '</h1><p>' + k3Html + '</p></div>' + rightImgHtml;
 
   var html = '<html><head><style>' +
-    'body{font-family:"Times New Roman",Times,serif;padding:30px;line-height:1.5;color:#000;font-size:' + fontSize + 'pt;}' +
-    '.kop{display:flex;align-items:center;justify-content:center;border-bottom:4px solid #000;padding-bottom:10px;margin-bottom:2px;}' +
-    '.kop-border{border-top:1px solid #000;margin-bottom:28px;}' +
-    '.kop-text{text-align:center;line-height:1.2;}' +
-    '.kop-text h2{margin:0;font-size:14pt;font-weight:normal;}' +
-    '.kop-text h1{margin:4px 0;font-size:18pt;font-weight:bold;}' +
-    '.kop-text p{margin:0;font-size:10pt;}' +
-    '.title{text-align:center;margin-bottom:24px;}' +
-    '.title h3{text-decoration:underline;font-size:13pt;margin:0;}' +
-    '.title p{margin:4px 0 0;font-size:12pt;}' +
-    '.content{margin:0 20px;}' +
-    '.row{display:flex;margin-bottom:7px;}' +
-    '.label{width:150px;}.colon{width:20px;}.val{flex:1;}' +
-    '.sig{margin-top:50px;display:flex;justify-content:flex-end;}' +
-    '.sig-box{width:300px;}' +
+    'body { font-family: Arial, Helvetica, sans-serif; padding:20px; line-height: 1.4; color: #000; font-size: ' + fontSize + 'pt; }' +
+    '.kop { display: flex; align-items: center; justify-content: center; margin-bottom: 4px; }' +
+    '.kop-text { text-align: center; }' +
+    '.kop-text h2 { margin: 0; font-size: calc(' + fontSize + 'pt + 4pt); font-weight: normal; }' +
+    '.kop-text h1 { margin: 2px 0; font-size: calc(' + fontSize + 'pt + 8pt); font-weight: bold; letter-spacing: 4px; }' +
+    '.kop-text p { margin: 0; font-size: calc(' + fontSize + 'pt - 1pt); }' +
+    '.kop-border { border-top: 3px solid #000; border-bottom: 1px solid #000; height: 1px; margin-bottom: 25px; }' +
+    '.title { text-align: center; margin-bottom: 25px; }' +
+    '.title h3 { margin: 0; font-size: calc(' + fontSize + 'pt + 2pt); font-weight: normal; letter-spacing: 5px; }' +
+    '.title p { margin: 8px 0 0; font-size: ' + fontSize + 'pt; }' +
+    '.content-table { width: 100%; border-collapse: collapse; border: none; margin-bottom: 15px; }' +
+    '.content-table td { padding: 4px 0; vertical-align: top; }' +
+    '.col-label { width: 80px; }' +
+    '.col-colon { width: 20px; text-align: center; }' +
+    '.col-val { text-align: justify; }' +
+    '.m-center { text-align: center; margin: 15px 0; }' +
+    '.m-p { margin-top: 15px; margin-bottom: 15px; text-align: justify; }' +
+    '.kepada-grid { display: grid; grid-template-columns: 20px 1fr; gap: 4px 8px; }' +
+    '.kepada-item { display: contents; }' +
+    '.sig-container { display: flex; justify-content: flex-end; margin-top: 30px; }' +
+    '.sig-box { width: 350px; }' +
+    '.sig-table { width: 100%; border: none; border-collapse: collapse; }' +
+    '.sig-table td { padding: 2px 0; vertical-align: top; }' +
     '</style></head><body>' +
     '<div class="kop">' + kopHtml + '</div>' +
     '<div class="kop-border"></div>' +
-    '<div class="title"><h3>SURAT PERINTAH TUGAS</h3><p>Nomor: 094/001/SPT/2026</p></div>' +
-    '<div class="content">' +
-    '<p style="margin-bottom:14px">Yang bertanda tangan di bawah ini, menginstruksikan kepada:</p>' +
-    '<div class="row"><div class="label">Nama</div><div class="colon">:</div><div class="val"><strong>NAMA PETUGAS</strong></div></div>' +
-    '<div class="row"><div class="label">NIP</div><div class="colon">:</div><div class="val">19800101 200501 1 001</div></div>' +
-    '<div class="row"><div class="label">Jabatan</div><div class="colon">:</div><div class="val">Auditor Ahli Madya</div></div>' +
-    '<p style="margin-top:18px;margin-bottom:10px">Untuk melaksanakan tugas:</p>' +
-    '<div class="row"><div class="label">Tujuan</div><div class="colon">:</div><div class="val">Kantor Camat Madiun</div></div>' +
-    '<div class="row"><div class="label">Keperluan</div><div class="colon">:</div><div class="val">Melakukan evaluasi berkas laporan keuangan</div></div>' +
-    '<div class="row"><div class="label">Waktu Tugas</div><div class="colon">:</div><div class="val">1 Januari 2026 s/d 3 Januari 2026</div></div>' +
-    '<p style="margin-top:20px">' + penutup + '</p>' +
-    '</div>' +
-    '<div class="sig"><div class="sig-box">' +
-    '<p>' + tKota + ', ' + new Date().toLocaleDateString('id-ID', {day:'numeric',month:'long',year:'numeric'}) + '<br><strong>' + tJab + '</strong></p>' +
+    '<div class="title"><h3>SURAT TUGAS</h3><p>NOMOR : 800.1.11.1 / 339 / 402.060 / 2026</p></div>' +
+    '<table class="content-table">' +
+    '<tr><td class="col-label">Dasar</td><td class="col-colon">:</td><td class="col-val">Surat Kepala Kejaksaan Negeri Kabupaten Madiun ...</td></tr>' +
+    '</table>' +
+    '<div class="m-center">MEMERINTAHKAN:</div>' +
+    '<table class="content-table">' +
+    '<tr><td class="col-label">Kepada</td><td class="col-colon">:</td><td class="col-val">' +
+    '<div class="kepada-grid"><div class="kepada-item"><span>1.</span><span>NAMA PETUGAS<br>NIP 19800101 200501 1 001<br>Auditor Ahli Madya</span></div></div>' +
+    '</td></tr>' +
+    '<tr><td class="col-label">Untuk</td><td class="col-colon">:</td><td class="col-val">Melakukan pemeriksaan...</td></tr>' +
+    '<tr><td class="col-label">Tanggal</td><td class="col-colon">:</td><td class="col-val">1 Januari 2026 sd 3 Januari 2026</td></tr>' +
+    '</table>' +
+    '<p class="m-p">APIP dalam melaksanakan tugas tidak menerima/meminta gratifikasi dan suap.</p>' +
+    '<p class="m-p">' + penutup + '</p>' +
+    '<div class="sig-container"><div class="sig-box">' +
+    '<table class="sig-table">' +
+    '<tr><td style="width:90px">Ditetapkan di</td><td style="width:15px">:</td><td>' + tKota + '</td></tr>' +
+    '<tr><td>Pada tanggal</td><td>:</td><td>' + new Date().toLocaleDateString('id-ID', {day:'numeric',month:'long',year:'numeric'}) + '</td></tr>' +
+    '</table>' +
+    '<p style="margin: 10px 0 0 0;">' + tJabHtml + '</p>' +
     '<br><br><br><br>' +
     '<p style="text-decoration:underline;font-weight:bold;margin:0">' + tNama + '</p>' +
-    '<p style="margin:0">NIP. ' + tNip + '</p>' +
+    '<p style="margin:0">NIP ' + tNip + '</p>' +
     '</div></div>' +
     '</body></html>';
 
