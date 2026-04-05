@@ -1058,7 +1058,7 @@ function updateSptPreview() {
     '</style></head><body>' +
     '<div class="kop">' + kopHtml + '</div>' +
     '<div class="kop-border"></div>' +
-    '<div class="title"><h3>SURAT TUGAS</h3><p>NOMOR : 800.1.11.1 / 339 / 402.060 / 2026</p></div>' +
+    '<div class="title"><h3>SURAT TUGAS</h3><p>NOMOR : [NOMOR SURAT]</p></div>' +
     '<table class="content-table">' +
     '<tr><td class="col-label">Dasar</td><td class="col-colon">:</td><td class="col-val">Surat Kepala Kejaksaan Negeri Kabupaten Madiun ...</td></tr>' +
     '</table>' +
