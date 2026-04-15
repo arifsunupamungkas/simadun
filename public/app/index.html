@@ -769,36 +769,35 @@
                 style="font-size:.95rem;font-weight:700;color:var(--text-main);display:flex;align-items:center;gap:8px;margin:0">
                 <i class="bi bi-archive-fill" style="color:#0891b2"></i> Daftar Dokumen SPT
               </h3>
-                            <div class="form-row">
+              <div class="form-row">
                 <div class="form-group"><label>Tim Personel (Nama) <span class="req">*</span></label><textarea
-                    class="form-control-custom" id="spt-nama" rows="3" placeholder="Satu baris untuk 1 nama (Tekan Enter)"></textarea></div>
+                    class="form-control-custom" id="spt-nama" rows="3"
+                    placeholder="Satu baris untuk 1 nama (Tekan Enter)"></textarea></div>
                 <div class="form-group"><label>Tim Personel (NIP) <span class="req">*</span></label><textarea
-                    class="form-control-custom" id="spt-nip" rows="3" placeholder="Isi urutan NIP sesuai Nama"></textarea></div>
+                    class="form-control-custom" id="spt-nip" rows="3"
+                    placeholder="Isi urutan NIP sesuai Nama"></textarea></div>
               </div>
               <div class="form-row">
                 <div class="form-group"><label>Jabatan Tim Khusus <span class="req">*</span></label><textarea
-                    class="form-control-custom" id="spt-jabatan" rows="3" placeholder="Pengendali Mutu, Ketua, Anggota, dll"></textarea></div>
+                    class="form-control-custom" id="spt-jabatan" rows="3"
+                    placeholder="Pengendali Mutu, Ketua, Anggota, dll"></textarea></div>
                 <div class="form-group"><label>Tujuan / Lokasi <span class="req">*</span></label><input type="text"
                     class="form-control-custom" id="spt-tujuan" placeholder="Lokasi tugas" /></div>
               </div>
-                    <th>No</th>
-                    <th>Nomor SPT</th>
-                    <th>Nama/NIP Yang Ditugaskan</th>
-                    <th>Jabatan</th>
-                    <th>Tujuan</th>
-                    <th>Tgl Terbit</th>
-                    <th>Pelaksanaan</th>
-                    <th>Lampiran</th>
-                    <th>Aksi</th>
-                  </tr>
-                </thead>
-                <tbody id="tbody-spt"></tbody>
+              <th>No</th>
+              <th>Nomor SPT</th>
+              <th>Nama/NIP Yang Ditugaskan</th>
+              <th>Jabatan</th>
+              <th>Tujuan</th>
+              <th>Tgl Terbit</th>
+              <th>Pelaksanaan</th>
+              <th>Lampiran</th>
+              <th>Aksi</th>
+              </tr>
+              </thead>
+              <tbody id="tbody-spt"></tbody>
               </table>
-            </div>
-          </div>
-        </div>
-
-        <!-- TAB: BUAT SPT -->
+                  <!-- TAB: BUAT SPT -->
         <div id="content-spt-buat" class="tab-content" style="display:none;">
           <div class="card" id="form-spt-baru">
             <h3
@@ -810,26 +809,31 @@
                 <input type="text" id="spt-nomor" class="form-control-custom" placeholder="Cth: 094/01/SPRINT/2026">
               </div>
               <div class="form-group">
-                <label class="form-label">Dasar</label>
-                <input type="text" id="spt-tujuan" class="form-control-custom" placeholder="Cth: Kantor Camat Madiun">
-              </div>
-              <div class="form-group">
-                <label class="form-label">Nama Petugas</label>
-                <input type="text" id="spt-nama" class="form-control-custom" placeholder="Nama Lengkap">
-              </div>
-              <div class="form-group">
-                <label class="form-label">NIP</label>
-                <input type="text" id="spt-nip" class="form-control-custom" placeholder="19800101 200501 1 001">
+                <label class="form-label">Dasar Tugas</label>
+                <input type="text" id="spt-tujuan" class="form-control-custom" placeholder="Surat Pj. Kepala Desa...">
               </div>
             </div>
+            
+            <div class="grid-2">
+              <div class="form-group">
+                <label class="form-label">Tim Personel (Nama) <span class="req">*</span></label>
+                <textarea class="form-control-custom" id="spt-nama" rows="3" placeholder="Satu baris untuk 1 nama (Tekan Enter)"></textarea>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Tim Personel (NIP) <span class="req">*</span></label>
+                <textarea class="form-control-custom" id="spt-nip" rows="3" placeholder="Isi urutan NIP sesuai Nama"></textarea>
+              </div>
+            </div>
+            
             <div class="form-group">
-              <label class="form-label">Jabatan</label>
-              <input type="text" id="spt-jabatan" class="form-control-custom" placeholder="Cth: Auditor Ahli Madya">
+              <label class="form-label">Jabatan Tim Khusus <span class="req">*</span></label>
+              <textarea class="form-control-custom" id="spt-jabatan" rows="2" placeholder="Pengendali Mutu, Ketua, Anggota, dll"></textarea>
             </div>
+            
             <div class="form-group">
               <label class="form-label">Keperluan Penetapan / Deskripsi Tugas</label>
               <textarea id="spt-keperluan" class="form-control-custom" rows="2"
-                placeholder="Cth: Melakukan evaluasi berkas..."></textarea>
+                placeholder="Melakukan pemeriksaan investigative terkait..."></textarea>
             </div>
             <div class="grid-2">
               <div class="form-group">
