@@ -936,7 +936,8 @@ function loadKopSettings() {
   var fields = {
     'set-kop1': ['simadun_kop1', 'PEMERINTAH KABUPATEN MADIUN'],
     'set-kop2': ['simadun_kop2', 'INSPEKTORAT'],
-    'set-kop3': ['simadun_kop3', 'Pusat Pemerintahan Mejayan, Jl. Alun-Alun Utara No. 4, Caruban'],
+    'set-kop3': ['simadun_kop3', 'Jalan M.T. Haryono, Caruban, Jawa Timur 63153, Telepon (0351) 453412,
+                              Laman www.inspektorat.madiunkab.go.id, Pos-el madiunkab.inspektorat@gmail.com'],
     'set-kop-telp': ['simadun_kop_telp', ''],
     'set-ttd-kota': ['simadun_ttd_kota', 'Madiun'],
     'set-ttd-jabatan': ['simadun_ttd_jabatan', 'Inspektur Kabupaten Madiun,'],
