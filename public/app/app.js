@@ -93,20 +93,20 @@ function startClock() {
 //  NAVIGATION
 // ══════════════════════════════════════════════════════════
 var PAGE_TITLES = {
-  dashboard:  'Dashboard',
-  arsip:      'Manajemen Arsip',
-  surat:      'Manajemen Surat',
-  spt:        'Surat Perintah Tugas',
-  panduan:    'Panduan Teknis',
+  dashboard: 'Dashboard',
+  arsip: 'Manajemen Arsip',
+  surat: 'Manajemen Surat',
+  spt: 'Surat Perintah Tugas',
+  panduan: 'Panduan Teknis',
   pengaturan: 'Pengaturan Sistem'
 };
 
 var PAGE_SUBS = {
-  dashboard:  'Ringkasan data kearsipan sistem',
-  arsip:      'Upload & kelola dokumen arsip',
-  surat:      'Surat Masuk, Keluar & Undangan',
-  spt:        'Arsip & Pembuatan SPT Dinas',
-  panduan:    'Dokumentasi lengkap fitur SIMADUN',
+  dashboard: 'Ringkasan data kearsipan sistem',
+  arsip: 'Upload & kelola dokumen arsip',
+  surat: 'Surat Masuk, Keluar & Undangan',
+  spt: 'Arsip & Pembuatan SPT Dinas',
+  panduan: 'Dokumentasi lengkap fitur SIMADUN',
   pengaturan: 'Konfigurasi akun & sistem'
 };
 
@@ -153,8 +153,8 @@ function togglePanduanAccordion(header) {
   var body = header.nextElementSibling;
   var isOpen = body.classList.contains('open');
   // close all first
-  document.querySelectorAll('.panduan-accordion-body').forEach(function(b) { b.classList.remove('open'); });
-  document.querySelectorAll('.panduan-accordion-header').forEach(function(h) { h.classList.remove('open'); });
+  document.querySelectorAll('.panduan-accordion-body').forEach(function (b) { b.classList.remove('open'); });
+  document.querySelectorAll('.panduan-accordion-header').forEach(function (h) { h.classList.remove('open'); });
   if (!isOpen) {
     body.classList.add('open');
     header.classList.add('open');
@@ -215,7 +215,7 @@ function doLogout() {
 async function loadDashboard() {
   try {
     var res = await callAPI('getDashboard', {});
-    
+
     // FALLBACK CLIENT-SIDE COUNTING
     // Membaca data arsip mentah jika backend api [action].js belum di-deploy.
     var fallbackUd = 0;
@@ -223,13 +223,13 @@ async function loadDashboard() {
     try {
       var aRes = await callAPI('getArsip', {});
       if (aRes && aRes.success && aRes.data) {
-        aRes.data.forEach(function(d) {
+        aRes.data.forEach(function (d) {
           var c = (d['Kategori'] || '').trim().toUpperCase();
           if (c === 'UNDANGAN') fallbackUd++;
           if (c === 'INDISIPLINER ASN') fallbackInd++;
         });
       }
-    } catch(e) {}
+    } catch (e) { }
 
     if (res.success) {
       animateCount('stat-masuk', res.suratMasuk);
@@ -401,9 +401,18 @@ async function loadSuratKeluar() {
 //  UNDANGAN
 // ══════════════════════════════════════════════════════════
 async function submitUndangan() {
-  var data = { nomorSurat: v('ud-nomor'), tanggal: v('ud-tanggal'), penyelenggara: v('ud-penyelenggara'), perihal: v('ud-perihal'), lokasi: v('ud-lokasi'), catatan: v('ud-catatan') };
-  if (!data.nomorSurat || !data.tanggal || !data.penyelenggara || !data.perihal) { showToast('Lengkapi field yang wajib diisi.', 'error'); return; }
-  showSpinner('Menyimpan undangan...');
+  var data = { 
+    nomorSurat: v('ud-nomor'), 
+    tanggal: v('ud-tanggal'), 
+    penyelenggara: v('ud-yth') || '-', 
+    perihal: v('ud-perihal'), 
+    lokasi: v('ud-tempat') || '-', 
+    catatan: 'Waktu: ' + v('ud-waktu') + ' | Acara: ' + v('ud-acara') + ' | ' + v('ud-catatan') 
+  };
+  if (!data.nomorSurat || !data.tanggal || !v('ud-yth') || !data.perihal || !v('ud-waktu') || !v('ud-penugasan')) { 
+    showToast('Lengkapi field (Nomor, Tanggal, Perihal, Yth, Penugasan, Waktu).', 'error'); return; 
+  }
+  showSpinner('Menyimpan data undangan...');
   try {
     var fileEl = document.getElementById('ud-file');
     var fd = fileEl.files[0] ? await readFileAsBase64(fileEl.files[0]) : null;
@@ -411,11 +420,77 @@ async function submitUndangan() {
     hideSpinner();
     if (res.success) {
       showToast(res.message, 'success');
-      resetFields(['ud-nomor', 'ud-tanggal', 'ud-penyelenggara', 'ud-perihal', 'ud-lokasi', 'ud-catatan']);
+      resetFields(['ud-nomor', 'ud-tanggal', 'ud-sifat', 'ud-lampiran', 'ud-perihal', 'ud-waktu', 'ud-yth', 'ud-tempat-tujuan', 'ud-penugasan', 'ud-tempat', 'ud-acara', 'ud-catatan']);
       fileEl.value = ''; document.getElementById('ud-file-info').textContent = '';
       togglePanel('form-undangan'); loadUndangan();
     } else showToast(res.message, 'error');
   } catch (err) { hideSpinner(); showToast('Error: ' + err.message, 'error'); }
+}
+
+async function createUndanganWord() {
+  if (!v('ud-nomor') || !v('ud-tanggal') || !v('ud-yth') || !v('ud-waktu')) {
+    showToast('Lengkapi minimal Nomor, Tanggal, Yth, dan Waktu.', 'error');
+    return;
+  }
+  showSpinner('Membuka Template & Meng-generate Docx...');
+  
+  try {
+    // Ambil data form
+    var dt = new Date(v('ud-tanggal'));
+    var hariOptions = { weekday: 'long' };
+    var tanggalOptions = { day: 'numeric', month: 'long', year: 'numeric' };
+    var hariTanggalStr = dt.toLocaleDateString('id-ID', hariOptions); // misal "Senin"
+    var tglBulanTahunStr = dt.toLocaleDateString('id-ID', tanggalOptions); // misal "15 April 2026"
+    
+    // Siapkan data placeholder
+    var templateData = {
+      nomor: v('ud-nomor'),
+      sifat: v('ud-sifat') || 'Penting',
+      lampiran: v('ud-lampiran') || '-',
+      hal: v('ud-perihal'),
+      yth: v('ud-yth').replace(/\n/g, ', '), // text
+      tempat_tujuan: v('ud-tempat-tujuan') || '',
+      penugasan: v('ud-penugasan'),
+      hari: hariTanggalStr,
+      tanggal: tglBulanTahunStr,
+      waktu: v('ud-waktu'),
+      tempat: v('ud-tempat') || '-',
+      acara: v('ud-acara') || '-',
+      catatan: v('ud-catatan') || '-'
+    };
+
+    // Ambil file template dari static public/assets/
+    var rawFile = await fetch('/assets/template_undangan.docx');
+    if(!rawFile.ok) {
+      hideSpinner();
+      showToast('Gagal memuat template: template_undangan.docx tidak ditemukan di host!', 'error');
+      return;
+    }
+    var arrayBuffer = await rawFile.arrayBuffer();
+    
+    // Inisiasi PizZip dan docxtemplater
+    var zip = new PizZip(arrayBuffer);
+    var doc = new window.docxtemplater(zip, {
+      paragraphLoop: true,
+      linebreaks: true
+    });
+
+    doc.render(templateData);
+
+    var out = doc.getZip().generate({
+      type: 'blob',
+      mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    });
+    
+    hideSpinner();
+    saveAs(out, 'Undangan_' + v('ud-nomor').replace(/\//g,'-') + '.docx');
+    showToast('Dokumen Word berhasil dibuat!', 'success');
+
+  } catch(e) {
+    hideSpinner();
+    console.error(e);
+    showToast('Terjadi kesalahan generate docx: ' + e.message, 'error');
+  }
 }
 
 async function loadUndangan() {
@@ -444,13 +519,13 @@ function renderSuratTable(tbodyId, res, cols, badgeClass, deleteAction, reloadFn
 
     // Mapping Sheet Name for Edit Modal depending on deleteAction
     var shName = 'Surat Masuk';
-    if(deleteAction === 'deleteSuratKeluar') shName = 'Surat Keluar';
-    if(deleteAction === 'deleteUndangan') shName = 'Undangan';
+    if (deleteAction === 'deleteSuratKeluar') shName = 'Surat Keluar';
+    if (deleteAction === 'deleteUndangan') shName = 'Undangan';
 
     var safeData = encodeURIComponent(JSON.stringify(d));
     var url = d['URL'] || d['File URL'];
     var lampiran = url ? '<button class="btn-link-custom action-col" style="padding:5px 8px;font-size:0.75rem" onclick="openPreview(\'' + url + '\')"><i class="bi bi-eye"></i> View</button>' : '<span style="color:var(--text-muted);font-size:.78rem">-</span>';
-    return '<tr><td>' + (i + 1) + '</td>' + cells + '<td>' + lampiran + '</td><td class="action-col" style="display:flex;gap:6px"><button class="btn-warning-custom" onclick="openEditModal(\''+shName+'\', \'' + safeData + '\')"><i class="bi bi-pencil"></i></button><button class="btn-danger-custom" onclick="deleteItem(\'' + deleteAction + '\',\'' + d['ID'] + '\',' + reloadFn.name + ')"><i class="bi bi-trash"></i></button></td></tr>';
+    return '<tr><td>' + (i + 1) + '</td>' + cells + '<td>' + lampiran + '</td><td class="action-col" style="display:flex;gap:6px"><button class="btn-warning-custom" onclick="openEditModal(\'' + shName + '\', \'' + safeData + '\')"><i class="bi bi-pencil"></i></button><button class="btn-danger-custom" onclick="deleteItem(\'' + deleteAction + '\',\'' + d['ID'] + '\',' + reloadFn.name + ')"><i class="bi bi-trash"></i></button></td></tr>';
   }).join('');
 }
 
@@ -460,30 +535,30 @@ function renderSuratTable(tbodyId, res, cols, badgeClass, deleteAction, reloadFn
 function setSptTab(tabId) {
   document.querySelectorAll('#page-spt .custom-tab').forEach(function (t) { t.classList.remove('active'); });
   document.querySelectorAll('#page-spt .tab-content').forEach(function (c) { c.style.display = 'none'; });
-  
+
   var activeBtn = document.getElementById('tab-' + tabId);
   var contentBlock = document.getElementById('content-' + tabId);
   if (activeBtn) activeBtn.classList.add('active');
   if (contentBlock) contentBlock.style.display = 'block';
-  
+
   if (tabId === 'spt-arsip') loadSPT();
 }
 
 async function submitArsipSPT() {
-  var data = { 
-    nomorSpt: v('arsip-spt-nomor'), 
-    tujuan: v('arsip-spt-tujuan'), 
-    keterangan: v('arsip-spt-ket') 
+  var data = {
+    nomorSpt: v('arsip-spt-nomor'),
+    tujuan: v('arsip-spt-tujuan'),
+    keterangan: v('arsip-spt-ket')
   };
   var fileEl = document.getElementById('arsip-spt-file');
 
   if (!data.nomorSpt || !fileEl.files[0]) { showToast('Nomor SPT dan file dokumen (PDF) wajib diisi.', 'error'); return; }
-  
+
   showSpinner('Mengkompres & Mengunggah Arsip SPT...');
   try {
     var fd = await readFileAsBase64(fileEl.files[0]);
     // Populate fake fallback fields so spreadsheet format remains consistent
-    data.nama = '-'; data.nip = '-'; data.jabatan = '-'; 
+    data.nama = '-'; data.nip = '-'; data.jabatan = '-';
     data.keperluan = 'Arsip Scan PDF'; data.tglBerangkat = '-'; data.tglKembali = '-';
 
     var res = await callAPI('saveSPT', { data: data, fileData: fd });
@@ -494,7 +569,7 @@ async function submitArsipSPT() {
       fileEl.value = '';
       var infoEl = document.getElementById('arsip-spt-file-info');
       if (infoEl) infoEl.textContent = '';
-      togglePanel('form-spt-arsip'); 
+      togglePanel('form-spt-arsip');
       loadSPT();
     } else {
       showToast(res.message, 'error');
@@ -503,21 +578,21 @@ async function submitArsipSPT() {
 }
 
 async function submitCreateSPT() {
-  var data = { 
-    nomorSpt: v('spt-nomor'), 
-    nama: v('spt-nama'), 
-    nip: v('spt-nip'), 
-    jabatan: v('spt-jabatan'), 
-    tujuan: v('spt-tujuan'), 
-    keperluan: v('spt-keperluan'), 
-    tglBerangkat: v('spt-tgl-berangkat'), 
-    tglKembali: v('spt-tgl-kembali'), 
-    keterangan: '-' 
+  var data = {
+    nomorSpt: v('spt-nomor'),
+    nama: v('spt-nama'),
+    nip: v('spt-nip'),
+    jabatan: v('spt-jabatan'),
+    tujuan: v('spt-tujuan'),
+    keperluan: v('spt-keperluan'),
+    tglBerangkat: v('spt-tgl-berangkat'),
+    tglKembali: v('spt-tgl-kembali'),
+    keterangan: '-'
   };
-  if (!data.nomorSpt || !data.nama || !data.tujuan || !data.keperluan || !data.tglBerangkat || !data.tglKembali) { 
-    showToast('Lengkapi field SPT yang wajib diisi.', 'error'); return; 
+  if (!data.nomorSpt || !data.nama || !data.tujuan || !data.keperluan || !data.tglBerangkat || !data.tglKembali) {
+    showToast('Lengkapi field SPT yang wajib diisi.', 'error'); return;
   }
-  
+
   showSpinner('Meregistrasi SPT Baru ke Database...');
   try {
     var res = await callAPI('saveSPT', { data: data, fileData: null });
@@ -525,7 +600,7 @@ async function submitCreateSPT() {
     if (res.success) {
       showToast('Berhasil disimpan. Mencetak dokumen...', 'success');
       data['Nomor SPT'] = data.nomorSpt; data['Nama'] = data.nama; data['NIP'] = data.nip; data['Jabatan'] = data.jabatan; data['Tujuan'] = data.tujuan; data['Keperluan'] = data.keperluan; data['Tgl Berangkat'] = data.tglBerangkat; data['Tgl Kembali'] = data.tglKembali;
-      
+
       var safeData = encodeURIComponent(JSON.stringify(data));
       printDocSPT(safeData);
 
@@ -546,7 +621,7 @@ async function loadSPT() {
       var url = d['URL'] || d['File URL'];
       var lampiran = url ? '<button class="btn-link-custom action-col" onclick="openPreview(\'' + url + '\')"><i class="bi bi-file-earmark-pdf"></i> Lihat</button>' : '<span style="color:var(--text-muted);font-size:.78rem">-</span>';
       var safeData = encodeURIComponent(JSON.stringify(d));
-      
+
       var target = (d['Nama'] && d['Nama'] !== '-') ? d['Nama'] + '<br><span style="font-family:var(--mono);font-size:.76rem;color:var(--text-muted)">' + (d['NIP'] || '') + '</span>' : '-';
       var berangkat = fmtDate(d['Tgl Berangkat'] || d['Tanggal Berangkat']);
       var kembali = fmtDate(d['Tgl Kembali'] || d['Tanggal Kembali']);
@@ -561,7 +636,7 @@ async function loadSPT() {
 
 function printDocSPT(encodedData) {
   var d = JSON.parse(decodeURIComponent(encodedData));
-  
+
   // DEFAULT KOP JIKA BELUM ADA DI PENGATURAN
   var k1 = localStorage.getItem('simadun_kop1') || 'PEMERINTAH KABUPATEN MADIUN';
   var k2 = localStorage.getItem('simadun_kop2') || 'INSPEKTORAT';
@@ -579,7 +654,7 @@ function printDocSPT(encodedData) {
   var logoKananSize = localStorage.getItem('simadun_logo_kanan_size') || logoSize;
   var fontSize = localStorage.getItem('simadun_font_size') || '11';
   var penutup = localStorage.getItem('simadun_penutup') || 'Demikian surat tugas ini dibuat untuk dilaksanakan dengan penuh tanggung jawab dan dipergunakan sebagaimana mestinya.';
-  
+
   var defaultLogo = BASE_URL + '/assets/icon-512.png';
   var leftImgSrc = logoKiri || (logoPos === 'left' ? defaultLogo : '');
   var rightImgSrc = logoKanan || (logoPos === 'right' ? defaultLogo : '');
@@ -659,20 +734,20 @@ function printDocSPT(encodedData) {
           <td class="col-colon">:</td>
           <td class="col-val">
             <div class="kepada-grid">
-              ${(function() {
-                var namaArr = (d['Nama'] || '-').split('\n');
-                var nipArr = (d['NIP'] || '-').split('\n');
-                var jabArr = (d['Jabatan'] || '-').split('\n');
-                var result = '';
-                for(var i=0; i<namaArr.length; i++) {
-                  if(!namaArr[i].trim()) continue;
-                  var n = namaArr[i].trim();
-                  var id = nipArr[i] ? nipArr[i].trim() : '-';
-                  var j = jabArr[i] ? jabArr[i].trim() : '-';
-                  result += '<div class="kepada-item"><span>' + (i+1) + '.</span><span><strong>' + n + '</strong><br>NIP ' + id + '<br>' + j + '</span></div><div style="width:100%; height:8px"></div>';
-                }
-                return result || '<span>-</span>';
-              })()}
+              ${(function () {
+      var namaArr = (d['Nama'] || '-').split('\n');
+      var nipArr = (d['NIP'] || '-').split('\n');
+      var jabArr = (d['Jabatan'] || '-').split('\n');
+      var result = '';
+      for (var i = 0; i < namaArr.length; i++) {
+        if (!namaArr[i].trim()) continue;
+        var n = namaArr[i].trim();
+        var id = nipArr[i] ? nipArr[i].trim() : '-';
+        var j = jabArr[i] ? jabArr[i].trim() : '-';
+        result += '<div class="kepada-item"><span>' + (i + 1) + '.</span><span><strong>' + n + '</strong><br>NIP ' + id + '<br>' + j + '</span></div><div style="width:100%; height:8px"></div>';
+      }
+      return result || '<span>-</span>';
+    })()}
             </div>
           </td>
         </tr>
@@ -713,7 +788,7 @@ function printPage() {
   var currentPage = APP.currentPage;
   var title = 'Laporan Dokumen';
   var tableIdStr = '';
-  
+
   if (currentPage === 'arsip') {
     title = 'LAPORAN REKAPITULASI ARSIP DOKUMEN';
     tableIdStr = 'arsip-table';
@@ -730,33 +805,33 @@ function printPage() {
   } else {
     showToast('Tidak ada data yang dapat dicetak pada halaman ini.', 'error'); return;
   }
-  
+
   var tableEl = document.getElementById(tableIdStr);
   if (!tableEl) { showToast('Tabel tidak ditemukan.', 'error'); return; }
-  
+
   var clone = tableEl.cloneNode(true);
   // Remove Aksi column (last column)
   var thr = clone.querySelector('thead tr');
   if (thr && thr.lastElementChild) thr.removeChild(thr.lastElementChild);
-  clone.querySelectorAll('tbody tr').forEach(function(tr) {
+  clone.querySelectorAll('tbody tr').forEach(function (tr) {
     if (!tr.classList.contains('no-data') && tr.lastElementChild) tr.removeChild(tr.lastElementChild);
   });
-  
+
   var k1 = localStorage.getItem('simadun_kop1') || 'PEMERINTAH KABUPATEN MADIUN';
   var k2 = localStorage.getItem('simadun_kop2') || 'INSPEKTORAT';
-  var k3 = localStorage.getItem('simadun_kop3') || 'Jalan M.T. Haryono, Caruban, Jawa Timur 63153, Telepon (0351) 453412,\\nLaman www.inspektorat.madiunkab.go.id, Pos-el madiunkab.inspektorat@gmail.com';
+  var k3 = localStorage.getItem('simadun_kop3') || 'Pusat Pemerintahan Mejayan, Jl. Alun-Alun Utara No. 4, Caruban';
   var kTelp = localStorage.getItem('simadun_kop_telp') || '';
   var logoKiri = localStorage.getItem('simadun_logo_kiri_data') || '';
   var logoKanan = localStorage.getItem('simadun_logo_kanan_data') || '';
   var logoKiriSize = localStorage.getItem('simadun_logo_kiri_size') || '70';
   var logoKananSize = localStorage.getItem('simadun_logo_kanan_size') || '70';
   var defaultLogo = BASE_URL + '/assets/icon-512.png';
-  
-  var leftImg = logoKiri ? ('<img src="' + logoKiri + '" style="width:' + logoKiriSize + 'px;margin-right:16px;">') 
-                        : ('<img src="' + defaultLogo + '" style="width:70px;margin-right:16px;">');
+
+  var leftImg = logoKiri ? ('<img src="' + logoKiri + '" style="width:' + logoKiriSize + 'px;margin-right:16px;">')
+    : ('<img src="' + defaultLogo + '" style="width:70px;margin-right:16px;">');
   var rightImg = logoKanan ? ('<img src="' + logoKanan + '" style="width:' + logoKananSize + 'px;margin-left:16px;">') : '';
 
-  var now = new Date().toLocaleDateString('id-ID', { day:'numeric', month:'long', year:'numeric' });
+  var now = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
   var w = window.open('', '_blank');
   w.document.write(`
     <html><head><title>Cetak Laporan - SIMADUN</title>
@@ -817,17 +892,17 @@ function openEditModal(sheetType, dataEnc) {
   var d = JSON.parse(decodeURIComponent(dataEnc));
   currentEditData = { sheet: sheetType, id: d['ID'], oriData: d };
   document.getElementById('edit-modal-title').textContent = 'Edit Data ' + sheetType;
-  
+
   var c = document.getElementById('edit-form-container');
   var html = '';
-  
+
   if (sheetType === 'Arsip') {
     html = `<div class="grid-2">
         <div class="form-group"><label>Nama File</label><input type="text" id="ed-arsip-nama" class="form-control-custom" value="${esc(d['Nama File'])}"></div>
         <div class="form-group"><label>Kategori</label><input type="text" id="ed-arsip-kat" class="form-control-custom" value="${esc(d['Kategori'])}"></div>
       </div>
       <div class="form-group"><label>Deskripsi</label><input type="text" id="ed-arsip-desk" class="form-control-custom" value="${esc(d['Deskripsi'])}"></div>
-      <div class="form-group"><label>Tanggal Arsip Asli</label><input type="date" id="ed-arsip-tgl" class="form-control-custom" value="${d['Tanggal Arsip'] ? d['Tanggal Arsip'].substring(0,10) : ''}"></div>`;
+      <div class="form-group"><label>Tanggal Arsip Asli</label><input type="date" id="ed-arsip-tgl" class="form-control-custom" value="${d['Tanggal Arsip'] ? d['Tanggal Arsip'].substring(0, 10) : ''}"></div>`;
   } else if (sheetType === 'Surat Masuk') {
     html = `<div class="grid-2">
         <div class="form-group"><label>Nomor Surat</label><input type="text" id="ed-sm-nomor" class="form-control-custom" value="${esc(d['Nomor Surat'])}"></div>
@@ -874,7 +949,7 @@ function openEditModal(sheetType, dataEnc) {
       <div class="form-group"><label>Keperluan</label><input type="text" id="ed-spt-kep" class="form-control-custom" value="${esc(d['Keperluan'])}"></div>
       <div class="form-group"><label>Keterangan</label><input type="text" id="ed-spt-ket" class="form-control-custom" value="${esc(d['Keterangan'])}"></div>`;
   }
-  
+
   c.innerHTML = html;
   document.getElementById('edit-modal').style.display = 'flex';
 }
@@ -883,21 +958,21 @@ async function submitEditData() {
   if (!currentEditData) return;
   var payload = { id: currentEditData.id, sheetName: currentEditData.sheet, data: {} };
   var t = currentEditData.sheet;
-  
+
   if (t === 'Arsip') { payload.data = { namaFile: v('ed-arsip-nama'), kategori: v('ed-arsip-kat'), deskripsi: v('ed-arsip-desk'), tglArsip: v('ed-arsip-tgl') }; }
   else if (t === 'Surat Masuk') { payload.data = { nomorSurat: v('ed-sm-nomor'), tanggal: v('ed-sm-tgl'), pengirim: v('ed-sm-pengirim'), perihal: v('ed-sm-perihal'), catatan: v('ed-sm-catatan'), kategori: v('ed-sm-kat') }; }
   else if (t === 'Surat Keluar') { payload.data = { nomorSurat: v('ed-sk-nomor'), tanggal: v('ed-sk-tgl'), tujuan: v('ed-sk-tujuan'), perihal: v('ed-sk-perihal'), catatan: v('ed-sk-catatan'), kategori: v('ed-sk-kat') }; }
   else if (t === 'Undangan') { payload.data = { nomorSurat: v('ed-ud-nomor'), tanggal: v('ed-ud-tgl'), penyelenggara: v('ed-ud-peny'), perihal: v('ed-ud-perihal'), catatan: v('ed-ud-catatan'), lokasi: v('ed-ud-lokasi') }; }
   else if (t === 'SPT') { payload.data = { nomorSpt: v('ed-spt-nomor'), nama: v('ed-spt-nama'), nip: v('ed-spt-nip'), jabatan: v('ed-spt-jab'), tujuan: v('ed-spt-tujuan'), keperluan: v('ed-spt-kep'), keterangan: v('ed-spt-ket') }; }
-  
+
   var fileEl = document.getElementById('edit-file');
   var fd = null;
   if (fileEl && fileEl.files[0]) fd = await readFileAsBase64(fileEl.files[0]);
-  
+
   showSpinner('Menyimpan perubahan data...');
   try {
     var realSheetName = t;
-    if (t==='Surat Masuk' || t==='Surat Keluar' || t==='Undangan' || t==='SPT' || t==='Arsip') realSheetName = t;
+    if (t === 'Surat Masuk' || t === 'Surat Keluar' || t === 'Undangan' || t === 'SPT' || t === 'Arsip') realSheetName = t;
     var res = await callAPI('updateRow', { sheetName: realSheetName, id: payload.id, data: payload.data, fileData: fd });
     hideSpinner();
     if (res.success) {
@@ -911,7 +986,7 @@ async function submitEditData() {
     } else {
       showToast(res.message, 'error');
     }
-  } catch(e) {
+  } catch (e) {
     hideSpinner(); showToast('Error: ' + e.message, 'error');
   }
 }
@@ -922,12 +997,12 @@ async function submitEditData() {
 function setPgTab(tabId) {
   document.querySelectorAll('#page-pengaturan .custom-tab').forEach(function (t) { t.classList.remove('active'); });
   document.querySelectorAll('#page-pengaturan .tab-content').forEach(function (c) { c.style.display = 'none'; });
-  
+
   var activeBtn = document.getElementById('tab-' + tabId);
   var contentBlock = document.getElementById('content-' + tabId);
   if (activeBtn) activeBtn.classList.add('active');
   if (contentBlock) contentBlock.style.display = 'block';
-  
+
   if (tabId === 'pg-cetak') loadKopSettings();
 }
 
@@ -935,7 +1010,7 @@ function loadKopSettings() {
   var fields = {
     'set-kop1': ['simadun_kop1', 'PEMERINTAH KABUPATEN MADIUN'],
     'set-kop2': ['simadun_kop2', 'INSPEKTORAT'],
-    'set-kop3': ['simadun_kop3', 'Jalan M.T. Haryono, Caruban, Jawa Timur 63153, Telepon (0351) 453412,\\nLaman www.inspektorat.madiunkab.go.id, Pos-el madiunkab.inspektorat@gmail.com'],
+    'set-kop3': ['simadun_kop3', 'Pusat Pemerintahan Mejayan, Jl. Alun-Alun Utara No. 4, Caruban'],
     'set-kop-telp': ['simadun_kop_telp', ''],
     'set-ttd-kota': ['simadun_ttd_kota', 'Madiun'],
     'set-ttd-jabatan': ['simadun_ttd_jabatan', 'Inspektur Kabupaten Madiun,'],
@@ -947,7 +1022,7 @@ function loadKopSettings() {
     'set-font-size': ['simadun_font_size', '12'],
     'set-penutup': ['simadun_penutup', 'Demikian Surat Perintah Tugas ini dibuat untuk dilaksanakan dengan penuh tanggung jawab.']
   };
-  Object.keys(fields).forEach(function(id) {
+  Object.keys(fields).forEach(function (id) {
     var el = document.getElementById(id);
     if (el) el.value = localStorage.getItem(fields[id][0]) || fields[id][1];
   });
@@ -977,7 +1052,7 @@ function handleLogoUpload(side, inputEl) {
   if (!file) return;
   if (file.size > 2 * 1024 * 1024) { showToast('Ukuran logo maksimal 2MB.', 'error'); return; }
   var reader = new FileReader();
-  reader.onload = function(e) {
+  reader.onload = function (e) {
     var dataUrl = e.target.result;
     localStorage.setItem('simadun_logo_' + side + '_data', dataUrl);
     var sizeEl = document.getElementById('set-logo-' + side + '-size');
@@ -1025,7 +1100,7 @@ function saveKopSettings() {
 
 function resetKopSettings() {
   if (!confirm('Reset semua pengaturan ke default?')) return;
-  ['simadun_kop1','simadun_kop2','simadun_kop3','simadun_kop_telp','simadun_ttd_kota','simadun_ttd_jabatan','simadun_ttd_nama','simadun_ttd_nip','simadun_logo_pos','simadun_logo_size','simadun_font_size','simadun_penutup'].forEach(function(k) { localStorage.removeItem(k); });
+  ['simadun_kop1', 'simadun_kop2', 'simadun_kop3', 'simadun_kop_telp', 'simadun_ttd_kota', 'simadun_ttd_jabatan', 'simadun_ttd_nama', 'simadun_ttd_nip', 'simadun_logo_pos', 'simadun_logo_size', 'simadun_font_size', 'simadun_penutup'].forEach(function (k) { localStorage.removeItem(k); });
   loadKopSettings();
   updateSptPreview();
   showToast('Pengaturan dikembalikan ke default.', 'info');
@@ -1056,7 +1131,7 @@ function updateSptPreview() {
 
   var leftImgHtml = leftImgSrc ? '<img src="' + leftImgSrc + '" style="width:' + (logoKiri ? logoKiriSize : logoSize) + 'px;margin-right:15px;object-fit:contain;" />' : '';
   var rightImgHtml = rightImgSrc ? '<img src="' + rightImgSrc + '" style="width:' + (logoKanan ? logoKananSize : logoSize) + 'px;margin-left:15px;object-fit:contain;" />' : '';
-  
+
   var k3Html = k3.replace(/\\n/g, '<br>') + (kTelp ? '<br>Telp: ' + kTelp : '');
   var tJabHtml = tJab.replace(/\\n/g, '<br>');
 
@@ -1106,7 +1181,7 @@ function updateSptPreview() {
     '<div class="sig-container"><div class="sig-box">' +
     '<table class="sig-table">' +
     '<tr><td style="width:90px">Ditetapkan di</td><td style="width:15px">:</td><td>' + tKota + '</td></tr>' +
-    '<tr><td>Pada tanggal</td><td>:</td><td>' + new Date().toLocaleDateString('id-ID', {day:'numeric',month:'long',year:'numeric'}) + '</td></tr>' +
+    '<tr><td>Pada tanggal</td><td>:</td><td>' + new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) + '</td></tr>' +
     '</table>' +
     '<p style="margin: 10px 0 0 0;">' + tJabHtml + '</p>' +
     '<br><br><br><br>' +
@@ -1307,7 +1382,7 @@ function resetFields(ids) {
 // ══════════════════════════════════════════════════════════
 document.addEventListener('DOMContentLoaded', function () {
   initTheme();
-  
+
   ['login-username', 'login-password'].forEach(function (id) {
     var el = document.getElementById(id);
     if (el) el.addEventListener('keydown', function (e) { if (e.key === 'Enter') doLogin(); });
