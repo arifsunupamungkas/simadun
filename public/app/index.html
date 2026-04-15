@@ -650,30 +650,51 @@
               <div class="form-row">
                 <div class="form-group"><label>Nomor Surat <span class="req">*</span></label><input type="text"
                     class="form-control-custom" id="ud-nomor" placeholder="No. surat undangan" /></div>
-                <div class="form-group"><label>Tanggal <span class="req">*</span></label><input type="date"
+                <div class="form-group"><label>Tanggal Surat <span class="req">*</span></label><input type="date"
                     class="form-control-custom" id="ud-tanggal" /></div>
               </div>
               <div class="form-row">
-                <div class="form-group"><label>Penyelenggara <span class="req">*</span></label><input type="text"
-                    class="form-control-custom" id="ud-penyelenggara" placeholder="Nama penyelenggara" /></div>
-                <div class="form-group"><label>Lokasi</label><input type="text" class="form-control-custom"
-                    id="ud-lokasi" placeholder="Lokasi kegiatan" /></div>
+                <div class="form-group"><label>Sifat Surat</label><input type="text" class="form-control-custom"
+                    id="ud-sifat" value="Penting" placeholder="Misal: Penting" /></div>
+                <div class="form-group"><label>Lampiran</label><input type="text" class="form-control-custom"
+                    id="ud-lampiran" value="-" placeholder="Misal: 1 (satu) Berkas" /></div>
               </div>
-              <div class="form-group"><label>Perihal <span class="req">*</span></label><input type="text"
-                  class="form-control-custom" id="ud-perihal" placeholder="Perihal undangan" /></div>
+              <div class="form-row">
+                <div class="form-group"><label>Perihal / Hal <span class="req">*</span></label><input type="text"
+                    class="form-control-custom" id="ud-perihal" value="Undangan" placeholder="Perihal surat" /></div>
+                <div class="form-group"><label>Waktu Acara <span class="req">*</span></label><input type="text"
+                    class="form-control-custom" id="ud-waktu" placeholder="Misal: 09.00 sd selesai" /></div>
+              </div>
+              <div class="form-row">
+                <div class="form-group"><label>Yth. (Tujuan Surat) <span class="req">*</span></label><textarea
+                    class="form-control-custom" id="ud-yth" rows="2" placeholder="Sebutkan Penerima..."></textarea></div>
+                <div class="form-group"><label>Di (Tempat Tujuan)</label><input type="text" class="form-control-custom"
+                    id="ud-tempat-tujuan" value="CARUBAN" placeholder="Misal: CARUBAN" /></div>
+              </div>
+              <div class="form-group"><label>Kalimat Penugasan / Pembuka <span class="req">*</span></label><textarea 
+                  class="form-control-custom" id="ud-penugasan" rows="2" 
+                  placeholder="Instruksi...">Mengharap dengan hormat bantuan Saudara untuk menugaskan ( ) untuk hadir pada:</textarea></div>
+              <div class="form-row">
+                <div class="form-group"><label>Tempat Acara</label><input type="text" class="form-control-custom"
+                    id="ud-tempat" placeholder="Misal: Ruang Inspektur..." /></div>
+                <div class="form-group"><label>Acara / Agenda</label><input type="text" class="form-control-custom"
+                     id="ud-acara" placeholder="Acara..." /></div>
+              </div>
               <div class="form-group"><label>Catatan</label><textarea class="form-control-custom" id="ud-catatan"
                   rows="2" placeholder="Catatan tambahan (opsional)"></textarea></div>
-              <div class="form-group"><label>Lampiran</label>
+              <div class="form-group"><label>Arsip Scan Surat (Opsional)</label>
                 <div class="file-drop" id="ud-drop"><input type="file" id="ud-file"
                     onchange="handleFileSelect('ud-file','ud-file-info')" />
                   <div class="drop-icon"><i class="bi bi-paperclip"></i></div>
-                  <div class="drop-text">Upload lampiran (opsional)</div>
+                  <div class="drop-text">Upload lampiran PDF (opsional untuk rekam jejak)</div>
                   <div class="drop-name" id="ud-file-info"></div>
                 </div>
               </div>
-              <div style="display:flex;gap:10px;justify-content:flex-end"><button class="btn-link-custom"
-                  onclick="togglePanel('form-undangan')">Batal</button><button class="btn-primary-custom"
-                  onclick="submitUndangan()"><i class="bi bi-save"></i> Simpan</button></div>
+              <div style="display:flex;gap:10px;justify-content:flex-end">
+                  <button class="btn-link-custom" onclick="togglePanel('form-undangan')">Batal</button>
+                  <button class="btn-primary-custom" style="background:#2563eb" onclick="createUndanganWord()"><i class="bi bi-file-word"></i> Buat Surat Word</button>
+                  <button class="btn-primary-custom" onclick="submitUndangan()"><i class="bi bi-save"></i> Simpan Data</button>
+              </div>
             </div>
           </div>
           <div class="panel">
@@ -1484,7 +1505,11 @@
     </div>
   </div>
 
-  <script src="/app/app.js?v=2"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/docxtemplater/3.37.11/docxtemplater.js"></script>
+  <script src="https://unpkg.com/pizzip@3.1.4/dist/pizzip.js"></script>
+  <script src="https://unpkg.com/pizzip@3.1.4/dist/pizzip-utils.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+  <script src="/app/app.js?v=3"></script>
 </body>
 
 </html>
