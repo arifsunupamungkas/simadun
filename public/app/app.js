@@ -215,17 +215,18 @@ function doLogout() {
 async function loadDashboard() {
   try {
     var res = await callAPI('getDashboard', {});
-
-    // Hitung UNDANGAN & INDISIPLINER langsung dari data arsip
-    var countUd = 0;
-    var countInd = 0;
+    
+    // FALLBACK CLIENT-SIDE COUNTING
+    // Membaca data arsip mentah jika backend api [action].js belum di-deploy.
+    var fallbackUd = 0;
+    var fallbackInd = 0;
     try {
       var aRes = await callAPI('getArsip', {});
       if (aRes && aRes.success && aRes.data) {
         aRes.data.forEach(function(d) {
           var c = (d['Kategori'] || '').trim().toUpperCase();
-          if (c === 'UNDANGAN') countUd++;
-          if (c === 'INDISIPLINER ASN') countInd++;
+          if (c === 'UNDANGAN') fallbackUd++;
+          if (c === 'INDISIPLINER ASN') fallbackInd++;
         });
       }
     } catch(e) {}
@@ -235,7 +236,7 @@ async function loadDashboard() {
       animateCount('stat-keluar', res.suratKeluar);
       animateCount('stat-undangan', res.undangan);
       animateCount('stat-spt', res.spt);
-      animateCount('stat-arsip', res.arsip);
+      animateCount('stat-arsip', res.arsip); // TALLY TOTAL ARSIP FIX
       animateCount('stat-dumas', res.countDumas);
       animateCount('stat-lhp', res.countLhp);
       animateCount('stat-mcsp', res.countMcsp);
@@ -248,11 +249,12 @@ async function loadDashboard() {
       animateCount('stat-iepk', res.countIepk);
       animateCount('stat-nota', res.countNota);
       animateCount('stat-perbup', res.countPerbup);
-      animateCount('stat-arsip-undangan', countUd);
-      animateCount('stat-arsip-indisipliner', countInd);
+      animateCount('stat-arsip-undangan', res.countUndanganArsip !== undefined ? res.countUndanganArsip : fallbackUd);
+      animateCount('stat-arsip-indisipliner', res.countIndisipliner !== undefined ? res.countIndisipliner : fallbackInd);
     }
   } catch (err) { /* silent */ }
 }
+
 function animateCount(id, target) {
   var el = document.getElementById(id);
   if (!el) return;
@@ -636,20 +638,20 @@ function printDocSPT(encodedData) {
       </div>
       <div class="kop-border"></div>
       
-      <div class="title">
-        <h3>SURAT TUGAS</h3>
-        <p>NOMOR : ${d['Nomor SPT'] || '-'}</p>
+            <div class="title">
+        <h3>S U R A T  T U G A S</h3>
+        <p>Nomor : ${d['Nomor SPT'] || '-'}</p>
       </div>
 
       <table class="content-table">
         <tr>
           <td class="col-label">Dasar</td>
           <td class="col-colon">:</td>
-          <td class="col-val">${d['Keterangan'] || '-'}</td>
+          <td class="col-val">${(d['Keterangan'] || '-').replace(/\n/g, '<br>')}</td>
         </tr>
       </table>
 
-      <div class="m-center">MEMERINTAHKAN:</div>
+      <div class="m-center" style="letter-spacing: 2px; font-weight: bold; font-size: calc(${fontSize}pt + 1pt);">M E N U G A S K A N</div>
 
       <table class="content-table">
         <tr>
@@ -657,14 +659,27 @@ function printDocSPT(encodedData) {
           <td class="col-colon">:</td>
           <td class="col-val">
             <div class="kepada-grid">
-              <div class="kepada-item"><span>1.</span><span>${d['Nama'] || '-'}<br>NIP ${d['NIP'] || '-'}<br>${d['Jabatan'] || '-'}</span></div>
+              ${(function() {
+                var namaArr = (d['Nama'] || '-').split('\n');
+                var nipArr = (d['NIP'] || '-').split('\n');
+                var jabArr = (d['Jabatan'] || '-').split('\n');
+                var result = '';
+                for(var i=0; i<namaArr.length; i++) {
+                  if(!namaArr[i].trim()) continue;
+                  var n = namaArr[i].trim();
+                  var id = nipArr[i] ? nipArr[i].trim() : '-';
+                  var j = jabArr[i] ? jabArr[i].trim() : '-';
+                  result += '<div class="kepada-item"><span>' + (i+1) + '.</span><span><strong>' + n + '</strong><br>NIP ' + id + '<br>' + j + '</span></div><div style="width:100%; height:8px"></div>';
+                }
+                return result || '<span>-</span>';
+              })()}
             </div>
           </td>
         </tr>
         <tr>
           <td class="col-label">Untuk</td>
           <td class="col-colon">:</td>
-          <td class="col-val">${d['Keperluan'] || '-'}</td>
+          <td class="col-val">${(d['Keperluan'] || '-').replace(/\n/g, '<br>')}</td>
         </tr>
         <tr>
           <td class="col-label">Tanggal</td>
@@ -674,8 +689,8 @@ function printDocSPT(encodedData) {
       </table>
 
       <p class="m-p">APIP dalam melaksanakan tugas tidak menerima/meminta gratifikasi dan suap.</p>
-      <p class="m-p">${penutup}</p>
-
+      <p class="m-p">Demikian Surat Tugas ini dibuat untuk dipergunakan sebagaimana mestinya.</p>
+      
       <div class="sig-container">
         <div class="sig-box">
           <table class="sig-table">
