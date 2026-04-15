@@ -215,12 +215,27 @@ function doLogout() {
 async function loadDashboard() {
   try {
     var res = await callAPI('getDashboard', {});
+
+    // Hitung UNDANGAN & INDISIPLINER langsung dari data arsip
+    var countUd = 0;
+    var countInd = 0;
+    try {
+      var aRes = await callAPI('getArsip', {});
+      if (aRes && aRes.success && aRes.data) {
+        aRes.data.forEach(function(d) {
+          var c = (d['Kategori'] || '').trim().toUpperCase();
+          if (c === 'UNDANGAN') countUd++;
+          if (c === 'INDISIPLINER ASN') countInd++;
+        });
+      }
+    } catch(e) {}
+
     if (res.success) {
       animateCount('stat-masuk', res.suratMasuk);
       animateCount('stat-keluar', res.suratKeluar);
       animateCount('stat-undangan', res.undangan);
       animateCount('stat-spt', res.spt);
-      animateCount('stat-arsip', res.arsip); // TALLY TOTAL ARSIP FIX
+      animateCount('stat-arsip', res.arsip);
       animateCount('stat-dumas', res.countDumas);
       animateCount('stat-lhp', res.countLhp);
       animateCount('stat-mcsp', res.countMcsp);
@@ -233,10 +248,11 @@ async function loadDashboard() {
       animateCount('stat-iepk', res.countIepk);
       animateCount('stat-nota', res.countNota);
       animateCount('stat-perbup', res.countPerbup);
+      animateCount('stat-arsip-undangan', countUd);
+      animateCount('stat-arsip-indisipliner', countInd);
     }
   } catch (err) { /* silent */ }
 }
-
 function animateCount(id, target) {
   var el = document.getElementById(id);
   if (!el) return;
