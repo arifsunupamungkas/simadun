@@ -769,23 +769,21 @@
                 style="font-size:.95rem;font-weight:700;color:var(--text-main);display:flex;align-items:center;gap:8px;margin:0">
                 <i class="bi bi-archive-fill" style="color:#0891b2"></i> Daftar Dokumen SPT
               </h3>
-              <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
-                <div class="search-bar">
-                  <i class="bi bi-search"></i>
-                  <input type="text" placeholder="Cari SPT, tgl, tujuan..."
-                    oninput="filterTable('table-spt', this.value)">
-                </div>
-                <button class="btn-primary-custom" onclick="togglePanel('form-spt-arsip')"><i
-                    class="bi bi-cloud-upload"></i> Unggah PDF</button>
+                            <div class="form-row">
+                <div class="form-group"><label>Tim Personel (Nama) <span class="req">*</span></label><textarea
+                    class="form-control-custom" id="spt-nama" rows="3" placeholder="Satu baris untuk 1 nama (Tekan Enter)"></textarea></div>
+                <div class="form-group"><label>Tim Personel (NIP) <span class="req">*</span></label><textarea
+                    class="form-control-custom" id="spt-nip" rows="3" placeholder="Isi urutan NIP sesuai Nama"></textarea></div>
               </div>
-            </div>
-            <div class="table-responsive">
-              <table class="data-table" id="table-spt">
-                <thead>
-                  <tr>
+              <div class="form-row">
+                <div class="form-group"><label>Jabatan Tim Khusus <span class="req">*</span></label><textarea
+                    class="form-control-custom" id="spt-jabatan" rows="3" placeholder="Pengendali Mutu, Ketua, Anggota, dll"></textarea></div>
+                <div class="form-group"><label>Tujuan / Lokasi <span class="req">*</span></label><input type="text"
+                    class="form-control-custom" id="spt-tujuan" placeholder="Lokasi tugas" /></div>
+              </div>
                     <th>No</th>
                     <th>Nomor SPT</th>
-                    <th>Nama/NIP Target</th>
+                    <th>Nama/NIP Yang Ditugaskan</th>
                     <th>Jabatan</th>
                     <th>Tujuan</th>
                     <th>Tgl Terbit</th>
