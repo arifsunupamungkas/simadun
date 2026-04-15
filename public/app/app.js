@@ -744,8 +744,7 @@ function printPage() {
   
   var k1 = localStorage.getItem('simadun_kop1') || 'PEMERINTAH KABUPATEN MADIUN';
   var k2 = localStorage.getItem('simadun_kop2') || 'INSPEKTORAT';
-  var k3 = localStorage.getItem('simadun_kop3') || 'Jalan M.T. Haryono, Caruban, Jawa Timur 63153, Telepon (0351) 453412,
-                                                 Laman www.inspektorat.madiunkab.go.id, Pos-el madiunkab.inspektorat@gmail.com';
+  var k3 = localStorage.getItem('simadun_kop3') || 'Jalan M.T. Haryono, Caruban, Jawa Timur 63153, Telepon (0351) 453412,\\nLaman www.inspektorat.madiunkab.go.id, Pos-el madiunkab.inspektorat@gmail.com';
   var kTelp = localStorage.getItem('simadun_kop_telp') || '';
   var logoKiri = localStorage.getItem('simadun_logo_kiri_data') || '';
   var logoKanan = localStorage.getItem('simadun_logo_kanan_data') || '';
@@ -936,8 +935,7 @@ function loadKopSettings() {
   var fields = {
     'set-kop1': ['simadun_kop1', 'PEMERINTAH KABUPATEN MADIUN'],
     'set-kop2': ['simadun_kop2', 'INSPEKTORAT'],
-    'set-kop3': ['simadun_kop3', 'Jalan M.T. Haryono, Caruban, Jawa Timur 63153, Telepon (0351) 453412,
-                              Laman www.inspektorat.madiunkab.go.id, Pos-el madiunkab.inspektorat@gmail.com'],
+    'set-kop3': ['simadun_kop3', 'Jalan M.T. Haryono, Caruban, Jawa Timur 63153, Telepon (0351) 453412,\\nLaman www.inspektorat.madiunkab.go.id, Pos-el madiunkab.inspektorat@gmail.com'],
     'set-kop-telp': ['simadun_kop_telp', ''],
     'set-ttd-kota': ['simadun_ttd_kota', 'Madiun'],
     'set-ttd-jabatan': ['simadun_ttd_jabatan', 'Inspektur Kabupaten Madiun,'],
