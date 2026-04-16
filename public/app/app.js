@@ -95,6 +95,7 @@ function startClock() {
 var PAGE_TITLES = {
   dashboard: 'Dashboard',
   arsip: 'Manajemen Arsip',
+  dokumentasi: 'Dokumentasi',
   surat: 'Manajemen Surat',
   spt: 'Surat Perintah Tugas',
   panduan: 'Panduan Teknis',
@@ -104,6 +105,7 @@ var PAGE_TITLES = {
 var PAGE_SUBS = {
   dashboard: 'Ringkasan data kearsipan sistem',
   arsip: 'Upload & kelola dokumen arsip',
+  dokumentasi: 'Upload foto kegiatan',
   surat: 'Surat Masuk, Keluar & Undangan',
   spt: 'Arsip & Pembuatan SPT Dinas',
   panduan: 'Dokumentasi lengkap fitur SIMADUN',
@@ -123,6 +125,7 @@ function navigateTo(page) {
   closeSidebar();
   if (page === 'dashboard') loadDashboard();
   if (page === 'arsip') loadArsip();
+  if (page === 'dokumentasi') loadDokumentasi();
   if (page === 'surat') { loadSuratMasuk(); loadSuratKeluar(); loadUndangan(); }
   if (page === 'spt') loadSPT();
   if (page === 'pengaturan') {
@@ -506,6 +509,97 @@ async function loadUndangan() {
     var res = await callAPI('getUndangan', {});
     renderSuratTable('tbody-ud', res, ['Nomor Surat', 'Tanggal', 'Penyelenggara', 'Perihal', 'Lokasi'], 'undang', 'deleteUndangan', loadUndangan);
   } catch (err) { /* silent */ }
+}
+
+// ══════════════════════════════════════════════════════════
+//  DOKUMENTASI HANDLING
+// ══════════════════════════════════════════════════════════
+async function loadDokumentasi() {
+  var gallery = document.getElementById('dokumentasi-gallery');
+  gallery.innerHTML = '<p style="color:var(--text-muted); text-align:center; grid-column: 1 / -1;">Memuat foto dokumentasi...</p>';
+  try {
+    var res = await callAPI('getDokumentasi', {});
+    if (!res.success || !res.data.length) {
+      gallery.innerHTML = '<p style="color:var(--text-muted); text-align:center; grid-column: 1 / -1;">Belum ada dokumentasi.</p>';
+      return;
+    }
+    
+    // Sort descending by date uploaded or created (ID is mostly time-based but let's reverse the array)
+    var reversedData = res.data.reverse();
+    gallery.innerHTML = reversedData.map(function(d) {
+      var url = d['File URL'] || '';
+      var nama = d['Nama Dokumentasi'] || '-';
+      var jenis = d['Jenis Dokumentasi'] || '-';
+      var wkt = d['Waktu Pengambilan'] || '';
+      if(wkt) { wkt = new Date(wkt).toLocaleString('id-ID'); }
+      var id = d['ID'];
+      
+      return `
+      <div style="background:var(--bg-secondary); border-radius:12px; overflow:hidden; box-shadow:var(--shadow-sm); display:flex; flex-direction:column; position:relative;">
+        <div style="height: 180px; width: 100%; background: #000;">
+          <img src="${url}" style="width:100%; height:100%; object-fit:cover;" alt="Foto" onerror="this.src='/assets/icon-192.png'">
+        </div>
+        <div style="padding: 14px; display:flex; flex-direction:column; gap:4px; flex-grow:1;">
+          <span style="font-size:0.7rem; font-weight:600; color:var(--primary);">${esc(jenis)}</span>
+          <h4 style="margin:0; font-size:1.05rem; font-weight:700; color:var(--text-main);">${esc(nama)}</h4>
+          <span style="font-size:0.75rem; color:var(--text-muted);"><i class="bi bi-clock"></i> ${esc(wkt)}</span>
+        </div>
+        <div style="padding: 10px 14px; border-top:1px solid var(--border-color); display:flex; justify-content:space-between;">
+          <button class="btn-link-custom action-col" style="padding:4px 8px; font-size:0.8rem;" onclick="openPreview('${url}')"><i class="bi bi-eye"></i> Lihat</button>
+          <button class="btn-danger-custom" style="padding:4px 8px; font-size:0.8rem;" onclick="deleteItem('deleteDokumentasi','${id}',loadDokumentasi)"><i class="bi bi-trash"></i></button>
+        </div>
+      </div>
+      `;
+    }).join('');
+  } catch (err) {
+    gallery.innerHTML = '<p style="color:var(--danger); text-align:center; grid-column: 1 / -1;">Gagal memuat dokumentasi.</p>';
+  }
+}
+
+async function submitDokumentasi() {
+  var data = {
+    namaDokumentasi: v('dokumentasi-nama'),
+    waktuPengambilan: v('dokumentasi-waktu'),
+    jenisDokumentasi: v('dokumentasi-kategori')
+  };
+  var fileEl = document.getElementById('dokumentasi-file');
+
+  if (!data.namaDokumentasi || !data.waktuPengambilan || !data.jenisDokumentasi) {
+    showToast('Semua kolom wajib diisi.', 'error'); return;
+  }
+  if (!fileEl.files[0]) {
+    showToast('Foto dokumentasi wajib dilampirkan.', 'error'); return;
+  }
+  
+  var fileExt = fileEl.files[0].name.toLowerCase();
+  if (!(fileExt.endsWith('.jpg') || fileExt.endsWith('.jpeg') || fileExt.endsWith('.png'))) {
+    showToast('Format foto harus .jpg atau .png', 'error'); return;
+  }
+
+  // Max size 5 MB
+  if (fileEl.files[0].size > 5 * 1024 * 1024) {
+    showToast('Ukuran foto terlalu besar. Maksimal 5 MB.', 'error'); return;
+  }
+
+  showSpinner('Mengunggah Foto Dokumentasi...');
+  try {
+    var fd = await readFileAsBase64(fileEl.files[0]);
+    var res = await callAPI('saveDokumentasi', { data: data, fileData: fd });
+    hideSpinner();
+    if (res.success) {
+      showToast(res.message, 'success');
+      resetFields(['dokumentasi-nama', 'dokumentasi-waktu', 'dokumentasi-kategori']);
+      fileEl.value = '';
+      document.getElementById('dokumentasi-file-info').textContent = '';
+      togglePanel('dokumentasi-form-panel');
+      loadDokumentasi();
+    } else {
+      showToast(res.message, 'error');
+    }
+  } catch (err) {
+    hideSpinner();
+    showToast('Error: ' + err.message, 'error');
+  }
 }
 
 // ══════════════════════════════════════════════════════════
