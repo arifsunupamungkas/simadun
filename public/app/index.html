@@ -650,51 +650,30 @@
               <div class="form-row">
                 <div class="form-group"><label>Nomor Surat <span class="req">*</span></label><input type="text"
                     class="form-control-custom" id="ud-nomor" placeholder="No. surat undangan" /></div>
-                <div class="form-group"><label>Tanggal Surat <span class="req">*</span></label><input type="date"
+                <div class="form-group"><label>Tanggal <span class="req">*</span></label><input type="date"
                     class="form-control-custom" id="ud-tanggal" /></div>
               </div>
               <div class="form-row">
-                <div class="form-group"><label>Sifat Surat</label><input type="text" class="form-control-custom"
-                    id="ud-sifat" value="Penting" placeholder="Misal: Penting" /></div>
-                <div class="form-group"><label>Lampiran</label><input type="text" class="form-control-custom"
-                    id="ud-lampiran" value="-" placeholder="Misal: 1 (satu) Berkas" /></div>
+                <div class="form-group"><label>Penyelenggara <span class="req">*</span></label><input type="text"
+                    class="form-control-custom" id="ud-penyelenggara" placeholder="Nama penyelenggara" /></div>
+                <div class="form-group"><label>Lokasi</label><input type="text" class="form-control-custom"
+                    id="ud-lokasi" placeholder="Lokasi kegiatan" /></div>
               </div>
-              <div class="form-row">
-                <div class="form-group"><label>Perihal / Hal <span class="req">*</span></label><input type="text"
-                    class="form-control-custom" id="ud-perihal" value="Undangan" placeholder="Perihal surat" /></div>
-                <div class="form-group"><label>Waktu Acara <span class="req">*</span></label><input type="text"
-                    class="form-control-custom" id="ud-waktu" placeholder="Misal: 09.00 sd selesai" /></div>
-              </div>
-              <div class="form-row">
-                <div class="form-group"><label>Yth. (Tujuan Surat) <span class="req">*</span></label><textarea
-                    class="form-control-custom" id="ud-yth" rows="2" placeholder="Sebutkan Penerima..."></textarea></div>
-                <div class="form-group"><label>Di (Tempat Tujuan)</label><input type="text" class="form-control-custom"
-                    id="ud-tempat-tujuan" value="CARUBAN" placeholder="Misal: CARUBAN" /></div>
-              </div>
-              <div class="form-group"><label>Kalimat Penugasan / Pembuka <span class="req">*</span></label><textarea 
-                  class="form-control-custom" id="ud-penugasan" rows="2" 
-                  placeholder="Instruksi...">Mengharap dengan hormat bantuan Saudara untuk menugaskan ( ) untuk hadir pada:</textarea></div>
-              <div class="form-row">
-                <div class="form-group"><label>Tempat Acara</label><input type="text" class="form-control-custom"
-                    id="ud-tempat" placeholder="Misal: Ruang Inspektur..." /></div>
-                <div class="form-group"><label>Acara / Agenda</label><input type="text" class="form-control-custom"
-                     id="ud-acara" placeholder="Acara..." /></div>
-              </div>
+              <div class="form-group"><label>Perihal <span class="req">*</span></label><input type="text"
+                  class="form-control-custom" id="ud-perihal" placeholder="Perihal undangan" /></div>
               <div class="form-group"><label>Catatan</label><textarea class="form-control-custom" id="ud-catatan"
                   rows="2" placeholder="Catatan tambahan (opsional)"></textarea></div>
-              <div class="form-group"><label>Arsip Scan Surat (Opsional)</label>
+              <div class="form-group"><label>Lampiran</label>
                 <div class="file-drop" id="ud-drop"><input type="file" id="ud-file"
                     onchange="handleFileSelect('ud-file','ud-file-info')" />
                   <div class="drop-icon"><i class="bi bi-paperclip"></i></div>
-                  <div class="drop-text">Upload lampiran PDF (opsional untuk rekam jejak)</div>
+                  <div class="drop-text">Upload lampiran (opsional)</div>
                   <div class="drop-name" id="ud-file-info"></div>
                 </div>
               </div>
-              <div style="display:flex;gap:10px;justify-content:flex-end">
-                  <button class="btn-link-custom" onclick="togglePanel('form-undangan')">Batal</button>
-                  <button class="btn-primary-custom" style="background:#2563eb" onclick="createUndanganWord()"><i class="bi bi-file-word"></i> Buat Surat Word</button>
-                  <button class="btn-primary-custom" onclick="submitUndangan()"><i class="bi bi-save"></i> Simpan Data</button>
-              </div>
+              <div style="display:flex;gap:10px;justify-content:flex-end"><button class="btn-link-custom"
+                  onclick="togglePanel('form-undangan')">Batal</button><button class="btn-primary-custom"
+                  onclick="submitUndangan()"><i class="bi bi-save"></i> Simpan</button></div>
             </div>
           </div>
           <div class="panel">
@@ -790,71 +769,69 @@
                 style="font-size:.95rem;font-weight:700;color:var(--text-main);display:flex;align-items:center;gap:8px;margin:0">
                 <i class="bi bi-archive-fill" style="color:#0891b2"></i> Daftar Dokumen SPT
               </h3>
-              <div class="form-row">
-                <div class="form-group"><label>Tim Personel (Nama) <span class="req">*</span></label><textarea
-                    class="form-control-custom" id="spt-nama" rows="3"
-                    placeholder="Satu baris untuk 1 nama (Tekan Enter)"></textarea></div>
-                <div class="form-group"><label>Tim Personel (NIP) <span class="req">*</span></label><textarea
-                    class="form-control-custom" id="spt-nip" rows="3"
-                    placeholder="Isi urutan NIP sesuai Nama"></textarea></div>
+              <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+                <div class="search-bar">
+                  <i class="bi bi-search"></i>
+                  <input type="text" placeholder="Cari SPT, tgl, tujuan..."
+                    oninput="filterTable('table-spt', this.value)">
+                </div>
+                <button class="btn-primary-custom" onclick="togglePanel('form-spt-arsip')"><i
+                    class="bi bi-cloud-upload"></i> Unggah PDF</button>
               </div>
-              <div class="form-row">
-                <div class="form-group"><label>Jabatan Tim Khusus <span class="req">*</span></label><textarea
-                    class="form-control-custom" id="spt-jabatan" rows="3"
-                    placeholder="Pengendali Mutu, Ketua, Anggota, dll"></textarea></div>
-                <div class="form-group"><label>Tujuan / Lokasi <span class="req">*</span></label><input type="text"
-                    class="form-control-custom" id="spt-tujuan" placeholder="Lokasi tugas" /></div>
-              </div>
-              <th>No</th>
-              <th>Nomor SPT</th>
-              <th>Nama/NIP Yang Ditugaskan</th>
-              <th>Jabatan</th>
-              <th>Tujuan</th>
-              <th>Tgl Terbit</th>
-              <th>Pelaksanaan</th>
-              <th>Lampiran</th>
-              <th>Aksi</th>
-              </tr>
-              </thead>
-              <tbody id="tbody-spt"></tbody>
+            </div>
+            <div class="table-responsive">
+              <table class="data-table" id="table-spt">
+                <thead>
+                  <tr>
+                    <th>No</th>
+                    <th>Nomor SPT</th>
+                    <th>Nama/NIP Target</th>
+                    <th>Jabatan</th>
+                    <th>Tujuan</th>
+                    <th>Tgl Terbit</th>
+                    <th>Pelaksanaan</th>
+                    <th>Lampiran</th>
+                    <th>Aksi</th>
+                  </tr>
+                </thead>
+                <tbody id="tbody-spt"></tbody>
               </table>
-                  <!-- TAB: BUAT SPT -->
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB: BUAT SPT -->
         <div id="content-spt-buat" class="tab-content" style="display:none;">
           <div class="card" id="form-spt-baru">
             <h3
               style="margin-bottom:16px;font-size:1.1rem; border-bottom: 2px solid var(--primary-lt); padding-bottom: 8px;">
-              Formulir Pembuatan Surat Perintah Tugas</h3>
+              Formilir Pembuatan Surat Perintah Tugas</h3>
             <div class="grid-2">
               <div class="form-group">
                 <label class="form-label">Nomor SPT</label>
                 <input type="text" id="spt-nomor" class="form-control-custom" placeholder="Cth: 094/01/SPRINT/2026">
               </div>
               <div class="form-group">
-                <label class="form-label">Dasar Tugas</label>
-                <input type="text" id="spt-tujuan" class="form-control-custom" placeholder="Surat Pj. Kepala Desa...">
-              </div>
-            </div>
-            
-            <div class="grid-2">
-              <div class="form-group">
-                <label class="form-label">Tim Personel (Nama) <span class="req">*</span></label>
-                <textarea class="form-control-custom" id="spt-nama" rows="3" placeholder="Satu baris untuk 1 nama (Tekan Enter)"></textarea>
+                <label class="form-label">Tujuan</label>
+                <input type="text" id="spt-tujuan" class="form-control-custom" placeholder="Cth: Kantor Camat Madiun">
               </div>
               <div class="form-group">
-                <label class="form-label">Tim Personel (NIP) <span class="req">*</span></label>
-                <textarea class="form-control-custom" id="spt-nip" rows="3" placeholder="Isi urutan NIP sesuai Nama"></textarea>
+                <label class="form-label">Nama Petugas</label>
+                <input type="text" id="spt-nama" class="form-control-custom" placeholder="Nama Lengkap">
+              </div>
+              <div class="form-group">
+                <label class="form-label">NIP</label>
+                <input type="text" id="spt-nip" class="form-control-custom" placeholder="19800101 200501 1 001">
               </div>
             </div>
-            
             <div class="form-group">
-              <label class="form-label">Jabatan Tim Khusus <span class="req">*</span></label>
-              <textarea class="form-control-custom" id="spt-jabatan" rows="2" placeholder="Pengendali Mutu, Ketua, Anggota, dll"></textarea>
+              <label class="form-label">Jabatan</label>
+              <input type="text" id="spt-jabatan" class="form-control-custom" placeholder="Cth: Auditor Ahli Madya">
             </div>
-            
             <div class="form-group">
               <label class="form-label">Keperluan Penetapan / Deskripsi Tugas</label>
               <textarea id="spt-keperluan" class="form-control-custom" rows="2"
-                placeholder="Melakukan pemeriksaan investigative terkait..."></textarea>
+                placeholder="Cth: Melakukan evaluasi berkas..."></textarea>
             </div>
             <div class="grid-2">
               <div class="form-group">
@@ -1165,15 +1142,15 @@
                   </div>
                 </div>
                 <div style="display:flex;flex-direction:column;align-items:center;gap:12px;text-align:center">
-                  <img src="/assets/Ninuy.png" alt="Sabrina Rahmadhanty Maghfira Syarif Kamil"
+                  <img src="/assets/basith.jpeg" alt="Ahmad Abdul Basith"
                     style="width:72px;height:72px;border-radius:50%;object-fit:cover;border:3px solid #16a34a;box-shadow:var(--shadow-md)">
                   <div>
-                    <div style="font-size:.95rem;font-weight:800;color:var(--text-main)">Sabrina Rahmadhanty Maghfira Syarif Kamil
+                    <div style="font-size:.95rem;font-weight:800;color:var(--text-main)">Ahmad Abdul Basith, S.Tr.I.P
                     </div>
                     <div style="font-size:.78rem;color:var(--text-muted);margin-bottom:8px">Co-Developer</div>
-                    <a href="https://wa.me/6281932683435" target="_blank" class="btn-primary-custom"
+                    <a href="https://wa.me/6285159686554" target="_blank" class="btn-primary-custom"
                       style="text-decoration:none;font-size:.78rem;padding:6px 12px;background:linear-gradient(135deg,#1a7f5a,#16a34a);"><i
-                        class="bi bi-whatsapp"></i> 0819-3268-3435</a>
+                        class="bi bi-whatsapp"></i> 0851-5968-6554</a>
                   </div>
                 </div>
               </div>
@@ -1505,11 +1482,7 @@
     </div>
   </div>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/docxtemplater/3.37.11/docxtemplater.js"></script>
-  <script src="https://unpkg.com/pizzip@3.1.4/dist/pizzip.js"></script>
-  <script src="https://unpkg.com/pizzip@3.1.4/dist/pizzip-utils.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
-  <script src="/app/app.js?v=3"></script>
+  <script src="/app/app.js?v=2"></script>
 </body>
 
 </html>
