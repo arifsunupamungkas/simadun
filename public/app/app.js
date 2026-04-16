@@ -346,8 +346,13 @@ async function loadArsip() {
       var safeData = encodeURIComponent(JSON.stringify(d));
       var tglArs = d['Tanggal Arsip'] ? fmtDate(d['Tanggal Arsip']) : '-';
       var url = d['URL'] || d['File URL'];
-      var actBtn = url ? '<button class="btn-link-custom" onclick="openPreview(\'' + url + '\')"><i class="bi bi-eye"></i> Lihat</button>' : '';
-      return '<tr><td>' + (i + 1) + '</td><td><strong>' + esc(d['Nama File']) + '</strong></td><td><span class="badge-cat arsip">' + esc(d['Kategori']) + '</span></td><td>' + esc(d['Folder']) + '</td><td>' + esc(d['Deskripsi']) + '</td><td>' + esc(d['Ukuran']) + '</td><td>' + tglArs + '</td><td>' + fmtDate(d['DibuatPada'] || d['CreatedAt']) + '</td><td class="action-col" style="display:flex;gap:6px">' + actBtn + '<button class="btn-warning-custom" onclick="openEditModal(\'Arsip\', \'' + safeData + '\')"><i class="bi bi-pencil"></i></button><button class="btn-danger-custom" onclick="deleteItem(\'deleteArsip\',\'' + d['ID'] + '\',loadArsip)"><i class="bi bi-trash"></i></button></td></tr>';
+      var fileId = d['File ID'];
+      var fileName = d['Nama File'] || 'Dokumen';
+      
+      var btns = getShareButtons(url, fileName, 'Arsip', fileId);
+      var actBtn = url ? '<button class="btn-link-custom" style="padding:5px 8px;" onclick="openPreview(\'' + url + '\')"><i class="bi bi-eye"></i> Lihat</button>' : '';
+      
+      return '<tr><td>' + (i + 1) + '</td><td><strong>' + esc(d['Nama File']) + '</strong></td><td><span class="badge-cat arsip">' + esc(d['Kategori']) + '</span></td><td>' + esc(d['Folder']) + '</td><td>' + esc(d['Deskripsi']) + '</td><td>' + esc(d['Ukuran']) + '</td><td>' + tglArs + '</td><td>' + fmtDate(d['DibuatPada'] || d['CreatedAt']) + '</td><td class="action-col" style="display:flex;gap:6px">' + actBtn + btns + '<button class="btn-warning-custom" onclick="openEditModal(\'Arsip\', \'' + safeData + '\')"><i class="bi bi-pencil"></i></button><button class="btn-danger-custom" onclick="deleteItem(\'deleteArsip\',\'' + d['ID'] + '\',loadArsip)"><i class="bi bi-trash"></i></button></td></tr>';
     }).join('');
   } catch (err) { showToast('Gagal memuat arsip: ' + err.message, 'error'); }
 }
@@ -552,6 +557,8 @@ function renderDokumentasi(data) {
     if(wkt) { wkt = new Date(wkt).toLocaleString('id-ID'); }
     var id = d['ID'];
     
+    var btns = getShareButtons(url, nama, 'Dokumentasi', fileId);
+    
     return `
     <div style="background:var(--bg-secondary); border-radius:12px; overflow:hidden; box-shadow:var(--shadow-sm); display:flex; flex-direction:column; position:relative;">
       <div style="height: 180px; width: 100%; background: #000;">
@@ -562,8 +569,11 @@ function renderDokumentasi(data) {
         <h4 style="margin:0; font-size:1.05rem; font-weight:700; color:var(--text-main);">${esc(nama)}</h4>
         <span style="font-size:0.75rem; color:var(--text-muted);"><i class="bi bi-clock"></i> ${esc(wkt)}</span>
       </div>
-      <div style="padding: 10px 14px; border-top:1px solid var(--border-color); display:flex; justify-content:space-between;">
-        <button class="btn-link-custom action-col" style="padding:4px 8px; font-size:0.8rem;" onclick="openPreview('${url}')"><i class="bi bi-eye"></i> Lihat</button>
+      <div style="padding: 10px 14px; border-top:1px solid var(--border-color); display:flex; justify-content:space-between; align-items:center;">
+        <div style="display:flex; gap:4px;">
+          <button class="btn-link-custom action-col" style="padding:4px 8px; font-size:0.8rem;" onclick="openPreview('${url}')"><i class="bi bi-eye"></i> Lihat</button>
+          ${btns}
+        </div>
         <button class="btn-danger-custom" style="padding:4px 8px; font-size:0.8rem;" onclick="deleteItem('deleteDokumentasi','${id}',loadDokumentasi)"><i class="bi bi-trash"></i></button>
       </div>
     </div>
@@ -783,8 +793,12 @@ function renderSuratTable(tbodyId, res, cols, badgeClass, deleteAction, reloadFn
 
     var safeData = encodeURIComponent(JSON.stringify(d));
     var url = d['URL'] || d['File URL'];
+    var fileId = d['File ID'];
+    var title = d['Nomor Surat'] || d['Perihal'] || 'Dokumen';
+    var btns = url ? getShareButtons(url, title, shName, fileId) : '';
+    
     var lampiran = url ? '<button class="btn-link-custom action-col" style="padding:5px 8px;font-size:0.75rem" onclick="openPreview(\'' + url + '\')"><i class="bi bi-eye"></i> View</button>' : '<span style="color:var(--text-muted);font-size:.78rem">-</span>';
-    return '<tr><td>' + (i + 1) + '</td>' + cells + '<td>' + lampiran + '</td><td class="action-col" style="display:flex;gap:6px"><button class="btn-warning-custom" onclick="openEditModal(\'' + shName + '\', \'' + safeData + '\')"><i class="bi bi-pencil"></i></button><button class="btn-danger-custom" onclick="deleteItem(\'' + deleteAction + '\',\'' + d['ID'] + '\',' + reloadFn.name + ')"><i class="bi bi-trash"></i></button></td></tr>';
+    return '<tr><td>' + (i + 1) + '</td>' + cells + '<td>' + lampiran + '</td><td class="action-col" style="display:flex;gap:6px">' + btns + '<button class="btn-warning-custom" onclick="openEditModal(\'' + shName + '\', \'' + safeData + '\')"><i class="bi bi-pencil"></i></button><button class="btn-danger-custom" onclick="deleteItem(\'' + deleteAction + '\',\'' + d['ID'] + '\',' + reloadFn.name + ')"><i class="bi bi-trash"></i></button></td></tr>';
   }).join('');
 }
 
@@ -888,7 +902,13 @@ async function loadSPT() {
       var tglTerbit = d['Tanggal'] || d['CreatedAt'] || d['created'] || '-';
       var tglTerbitFmt = tglTerbit !== '-' ? fmtDate(tglTerbit) : '<span style="color:var(--text-muted);font-size:.78rem">-</span>';
 
-      return '<tr><td>' + (i + 1) + '</td><td><strong>' + esc(d['Nomor SPT']) + '</strong></td><td>' + target + '</td><td style="font-size:.82rem">' + esc(d['Jabatan'] || '-') + '</td><td>' + esc(d['Tujuan'] || '-') + '</td><td style="font-size:.82rem">' + tglTerbitFmt + '</td><td style="font-size:.82rem">' + jadwal + '</td><td>' + lampiran + '</td><td class="action-col" style="display:flex;gap:6px"><button class="btn-primary-custom" title="Cetak SPT" style="padding:5px 10px;" onclick="printDocSPT(\'' + safeData + '\')"><i class="bi bi-printer"></i></button><button class="btn-warning-custom" onclick="openEditModal(\'SPT\', \'' + safeData + '\')"><i class="bi bi-pencil"></i></button><button class="btn-danger-custom" onclick="deleteItem(\'deleteSPT\',\'' + d['ID'] + '\',loadSPT)"><i class="bi bi-trash"></i></button></td></tr>';
+      var schedule = d['Tgl Berangkat'] ? d['Tgl Berangkat'] + (d['Tgl Kembali'] ? ' s.d ' + d['Tgl Kembali'] : '') : '-';
+      var url = d['URL'] || d['File URL'];
+      var fileId = d['File ID'];
+      var btns = url ? getShareButtons(url, d['Nomor SPT'], 'SPT', fileId) : '';
+      var lampiran = url ? '<button class="btn-link-custom action-col" style="padding:5px 8px;font-size:0.75rem" onclick="openPreview(\'' + url + '\')"><i class="bi bi-eye"></i> View</button>' : '<span style="color:var(--text-muted);font-size:.78rem">-</span>';
+      
+      return '<tr><td>' + (i + 1) + '</td><td><strong>' + esc(d['Nomor SPT']) + '</strong></td><td>' + target + '</td><td style="font-size:.82rem">' + esc(d['Jabatan'] || '-') + '</td><td>' + esc(d['Tujuan'] || '-') + '</td><td style="font-size:.82rem">' + tglTerbitFmt + '</td><td style="font-size:.82rem">' + schedule + '</td><td>' + lampiran + '</td><td class="action-col" style="display:flex;gap:6px">' + btns + '<button class="btn-primary-custom" title="Cetak SPT" style="padding:5px 10px;" onclick="printDocSPT(\'' + safeData + '\')"><i class="bi bi-printer"></i></button><button class="btn-warning-custom" onclick="openEditModal(\'SPT\', \'' + safeData + '\')"><i class="bi bi-pencil"></i></button><button class="btn-danger-custom" onclick="deleteItem(\'deleteSPT\',\'' + d['ID'] + '\',loadSPT)"><i class="bi bi-trash"></i></button></td></tr>';
     }).join('');
   } catch (err) { /* silent */ }
 }
@@ -1615,6 +1635,32 @@ function filterTable(tableId, query) {
   document.querySelectorAll('#' + tableId + ' tbody tr:not(.no-data)').forEach(function (row) {
     row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
   });
+}
+
+function getShareButtons(url, title, type, fileId) {
+  if (!url) return '';
+  var cleanTitle = title || 'Dokumen';
+  var downloadUrl = fileId ? 'https://drive.google.com/uc?export=download&id=' + fileId : url;
+  
+  // WA Message
+  var msg = `Halo, berikut adalah ${type}: *${cleanTitle}*. Silakan unduh atau lihat melalui tautan resmi ini: ${url}`;
+  var waLink = 'https://wa.me/?text=' + encodeURIComponent(msg);
+  
+  return `
+    <a href="${downloadUrl}" target="_blank" class="btn-link-custom" style="padding:5px 10px; color:#3b82f6; text-decoration:none; font-size: 0.8rem; font-weight: 600;" title="Download File">
+      <i class="bi bi-download"></i> Unduh
+    </a>
+    <div class="share-dropdown">
+      <button type="button" class="btn-link-custom" style="padding:5px 10px; color:#22c55e; border:none; background:none; cursor:pointer;" title="Bagikan">
+        <i class="bi bi-box-arrow-up"></i>
+      </button>
+      <div class="share-dropdown-content">
+        <a href="${waLink}" target="_blank" class="share-dropdown-item">
+          <i class="bi bi-whatsapp" style="color:#22c55e; font-size:1.1rem;"></i> Bagikan melalui WhatsApp
+        </a>
+      </div>
+    </div>
+  `;
 }
 
 // ══════════════════════════════════════════════════════════
