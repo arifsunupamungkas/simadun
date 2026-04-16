@@ -514,6 +514,8 @@ async function loadUndangan() {
 // ══════════════════════════════════════════════════════════
 //  DOKUMENTASI HANDLING
 // ══════════════════════════════════════════════════════════
+var dokumentasiData = [];
+
 async function loadDokumentasi() {
   var gallery = document.getElementById('dokumentasi-gallery');
   gallery.innerHTML = '<p style="color:var(--text-muted); text-align:center; grid-column: 1 / -1;">Memuat foto dokumentasi...</p>';
@@ -521,39 +523,63 @@ async function loadDokumentasi() {
     var res = await callAPI('getDokumentasi', {});
     if (!res.success || !res.data.length) {
       gallery.innerHTML = '<p style="color:var(--text-muted); text-align:center; grid-column: 1 / -1;">Belum ada dokumentasi.</p>';
+      dokumentasiData = [];
       return;
     }
-    
-    // Sort descending by date uploaded or created (ID is mostly time-based but let's reverse the array)
-    var reversedData = res.data.reverse();
-    gallery.innerHTML = reversedData.map(function(d) {
-      var url = d['File URL'] || '';
-      var nama = d['Nama Dokumentasi'] || '-';
-      var jenis = d['Jenis Dokumentasi'] || '-';
-      var wkt = d['Waktu Pengambilan'] || '';
-      if(wkt) { wkt = new Date(wkt).toLocaleString('id-ID'); }
-      var id = d['ID'];
-      
-      return `
-      <div style="background:var(--bg-secondary); border-radius:12px; overflow:hidden; box-shadow:var(--shadow-sm); display:flex; flex-direction:column; position:relative;">
-        <div style="height: 180px; width: 100%; background: #000;">
-          <img src="${url}" style="width:100%; height:100%; object-fit:cover;" alt="Foto" onerror="this.src='/assets/icon-192.png'">
-        </div>
-        <div style="padding: 14px; display:flex; flex-direction:column; gap:4px; flex-grow:1;">
-          <span style="font-size:0.7rem; font-weight:600; color:var(--primary);">${esc(jenis)}</span>
-          <h4 style="margin:0; font-size:1.05rem; font-weight:700; color:var(--text-main);">${esc(nama)}</h4>
-          <span style="font-size:0.75rem; color:var(--text-muted);"><i class="bi bi-clock"></i> ${esc(wkt)}</span>
-        </div>
-        <div style="padding: 10px 14px; border-top:1px solid var(--border-color); display:flex; justify-content:space-between;">
-          <button class="btn-link-custom action-col" style="padding:4px 8px; font-size:0.8rem;" onclick="openPreview('${url}')"><i class="bi bi-eye"></i> Lihat</button>
-          <button class="btn-danger-custom" style="padding:4px 8px; font-size:0.8rem;" onclick="deleteItem('deleteDokumentasi','${id}',loadDokumentasi)"><i class="bi bi-trash"></i></button>
-        </div>
-      </div>
-      `;
-    }).join('');
+    dokumentasiData = res.data.reverse();
+    renderDokumentasi(dokumentasiData);
   } catch (err) {
     gallery.innerHTML = '<p style="color:var(--danger); text-align:center; grid-column: 1 / -1;">Gagal memuat dokumentasi.</p>';
   }
+}
+
+function renderDokumentasi(data) {
+  var gallery = document.getElementById('dokumentasi-gallery');
+  if (!data || !data.length) {
+    gallery.innerHTML = '<p style="color:var(--text-muted); text-align:center; grid-column: 1 / -1;">Data tidak ditemukan.</p>';
+    return;
+  }
+  
+  gallery.innerHTML = data.map(function(d) {
+    var fileId = d['File ID'];
+    var url = d['File URL'] || '';
+    // Use the explicit file ID to fetch the real image as thumbnail, bypassing Preview block
+    var thumbUrl = fileId ? 'https://drive.google.com/uc?id=' + fileId : url;
+    
+    var nama = d['Nama Dokumentasi'] || '-';
+    var jenis = d['Jenis Dokumentasi'] || '-';
+    var wkt = d['Waktu Pengambilan'] || '';
+    if(wkt) { wkt = new Date(wkt).toLocaleString('id-ID'); }
+    var id = d['ID'];
+    
+    return `
+    <div style="background:var(--bg-secondary); border-radius:12px; overflow:hidden; box-shadow:var(--shadow-sm); display:flex; flex-direction:column; position:relative;">
+      <div style="height: 180px; width: 100%; background: #000;">
+        <img src="${thumbUrl}" style="width:100%; height:100%; object-fit:cover;" alt="Foto" onerror="this.src='/assets/icon-192.png'">
+      </div>
+      <div style="padding: 14px; display:flex; flex-direction:column; gap:4px; flex-grow:1;">
+        <span style="font-size:0.7rem; font-weight:600; color:var(--primary);">${esc(jenis)}</span>
+        <h4 style="margin:0; font-size:1.05rem; font-weight:700; color:var(--text-main);">${esc(nama)}</h4>
+        <span style="font-size:0.75rem; color:var(--text-muted);"><i class="bi bi-clock"></i> ${esc(wkt)}</span>
+      </div>
+      <div style="padding: 10px 14px; border-top:1px solid var(--border-color); display:flex; justify-content:space-between;">
+        <button class="btn-link-custom action-col" style="padding:4px 8px; font-size:0.8rem;" onclick="openPreview('${url}')"><i class="bi bi-eye"></i> Lihat</button>
+        <button class="btn-danger-custom" style="padding:4px 8px; font-size:0.8rem;" onclick="deleteItem('deleteDokumentasi','${id}',loadDokumentasi)"><i class="bi bi-trash"></i></button>
+      </div>
+    </div>
+    `;
+  }).join('');
+}
+
+function filterDokumentasi(keyword) {
+  if(!keyword) return renderDokumentasi(dokumentasiData);
+  var kw = keyword.toLowerCase();
+  var filtered = dokumentasiData.filter(function(d) {
+    var nama = (d['Nama Dokumentasi'] || '').toLowerCase();
+    var jenis = (d['Jenis Dokumentasi'] || '').toLowerCase();
+    return nama.includes(kw) || jenis.includes(kw);
+  });
+  renderDokumentasi(filtered);
 }
 
 var currentDokumentasiSource = null;
