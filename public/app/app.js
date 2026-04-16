@@ -543,8 +543,8 @@ function renderDokumentasi(data) {
   gallery.innerHTML = data.map(function(d) {
     var fileId = d['File ID'];
     var url = d['File URL'] || '';
-    // Use the explicit file ID to fetch the real image as thumbnail, bypassing Preview block
-    var thumbUrl = fileId ? 'https://drive.google.com/uc?id=' + fileId : url;
+    // Use the explicit file ID to fetch the real image as thumbnail, bypassing Preview block and cookie issues
+    var thumbUrl = fileId ? 'https://drive.google.com/thumbnail?id=' + fileId + '&sz=w800' : url;
     
     var nama = d['Nama Dokumentasi'] || '-';
     var jenis = d['Jenis Dokumentasi'] || '-';
