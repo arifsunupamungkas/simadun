@@ -556,41 +556,172 @@ async function loadDokumentasi() {
   }
 }
 
+var currentDokumentasiSource = null;
+var currentDokumentasiFile = null;
+
+function handleFileSelectLive() {
+  var el = document.getElementById('dokumentasi-file-live');
+  if(el.files.length) {
+    currentDokumentasiSource = 'live';
+    currentDokumentasiFile = el.files[0];
+    document.getElementById('dokumentasi-file-gallery').value = '';
+    var info = document.getElementById('dokumentasi-file-info');
+    info.style.display = 'block';
+    info.innerHTML = '<i class="bi bi-camera-fill"></i> Terpilih dari Kamera Live: ' + currentDokumentasiFile.name;
+    document.getElementById('dokumentasi-gps-status').style.display = 'block';
+  }
+}
+
+function handleFileSelectGallery() {
+  var el = document.getElementById('dokumentasi-file-gallery');
+  if(el.files.length) {
+    currentDokumentasiSource = 'gallery';
+    currentDokumentasiFile = el.files[0];
+    document.getElementById('dokumentasi-file-live').value = '';
+    var info = document.getElementById('dokumentasi-file-info');
+    info.style.display = 'block';
+    info.innerHTML = '<i class="bi bi-images"></i> Terpilih dari Galeri: ' + currentDokumentasiFile.name;
+    document.getElementById('dokumentasi-gps-status').style.display = 'none';
+  }
+}
+
+async function getGeoLocation() {
+  return new Promise((resolve, reject) => {
+    if(!navigator.geolocation) return reject('Geolocation tidak didukung');
+    navigator.geolocation.getCurrentPosition(
+      pos => resolve({ lat: pos.coords.latitude, lon: pos.coords.longitude }),
+      err => reject(err),
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  });
+}
+
+async function getReverseGeocode(lat, lon) {
+  try {
+    var res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`);
+    var data = await res.json();
+    return data.display_name || 'Lokasi tidak diketahui';
+  } catch(e) {
+    return `Lat: ${lat}, Lon: ${lon}`;
+  }
+}
+
+async function applyWatermark(fileDataURL, locData) {
+  return new Promise((resolve, reject) => {
+    var img = new Image();
+    img.onload = function() {
+      var canvas = document.getElementById('watermark-canvas');
+      var ctx = canvas.getContext('2d');
+      canvas.width = img.width;
+      canvas.height = img.height;
+      ctx.drawImage(img, 0, 0);
+
+      // Skala watermark mengikuti ukuran gambar (misal lebar minimum font = 24 untuk pic kecil)
+      var scale = canvas.width / 1000;
+      var fontSize = Math.max(16, 24 * scale);
+      var padding = fontSize;
+      var bottomH = fontSize * 5 + padding * 2;
+      
+      // Draw dark semi-transparent rectangle at bottom
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+      ctx.fillRect(0, canvas.height - bottomH, canvas.width, bottomH);
+
+      // Set text styles
+      ctx.textBaseline = 'top';
+      
+      // SIMADUN Branding
+      ctx.fillStyle = '#facc15'; // yellow-400
+      ctx.font = 'bold ' + (fontSize * 1.1) + 'px "Segoe UI", Arial, sans-serif';
+      var textY = canvas.height - bottomH + padding;
+      var textX = padding;
+      ctx.fillText('SIMADUN - INSPEKTORAT KABUPATEN MADIUN', textX, textY);
+      
+      // Info Lokasi
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'normal ' + fontSize + 'px "Segoe UI", Arial, sans-serif';
+      textY += fontSize * 1.5;
+      
+      // Handle multiline for long address
+      var maxWidth = canvas.width - (padding * 2);
+      ctx.fillText('Alamat: ' + locData.address, textX, textY, maxWidth);
+      
+      // Koordinat
+      textY += fontSize * 1.2;
+      ctx.fillText('Koordinat: ' + locData.lat.toFixed(6) + ', ' + locData.lon.toFixed(6), textX, textY);
+      
+      // Waktu
+      textY += fontSize * 1.2;
+      var dateStr = new Date().toLocaleString('id-ID', { dateStyle:'full', timeStyle:'medium' });
+      ctx.fillText('Waktu: ' + dateStr, textX, textY);
+
+      resolve(canvas.toDataURL('image/jpeg', 0.85));
+    };
+    img.onerror = reject;
+    img.src = fileDataURL;
+  });
+}
+
 async function submitDokumentasi() {
   var data = {
     namaDokumentasi: v('dokumentasi-nama'),
     waktuPengambilan: v('dokumentasi-waktu'),
     jenisDokumentasi: v('dokumentasi-kategori')
   };
-  var fileEl = document.getElementById('dokumentasi-file');
 
   if (!data.namaDokumentasi || !data.waktuPengambilan || !data.jenisDokumentasi) {
     showToast('Semua kolom wajib diisi.', 'error'); return;
   }
-  if (!fileEl.files[0]) {
+  if (!currentDokumentasiFile) {
     showToast('Foto dokumentasi wajib dilampirkan.', 'error'); return;
   }
   
-  var fileExt = fileEl.files[0].name.toLowerCase();
+  var fileExt = currentDokumentasiFile.name.toLowerCase();
   if (!(fileExt.endsWith('.jpg') || fileExt.endsWith('.jpeg') || fileExt.endsWith('.png'))) {
     showToast('Format foto harus .jpg atau .png', 'error'); return;
   }
 
   // Max size 5 MB
-  if (fileEl.files[0].size > 5 * 1024 * 1024) {
+  if (currentDokumentasiFile.size > 5 * 1024 * 1024) {
     showToast('Ukuran foto terlalu besar. Maksimal 5 MB.', 'error'); return;
   }
 
-  showSpinner('Mengunggah Foto Dokumentasi...');
+  showSpinner(currentDokumentasiSource === 'live' ? 'Mendeteksi Lokasi Satelit...' : 'Mengunggah Foto...');
   try {
-    var fd = await readFileAsBase64(fileEl.files[0]);
-    var res = await callAPI('saveDokumentasi', { data: data, fileData: fd });
+    var rawBase64 = await readFileAsBase64(currentDokumentasiFile);
+    var finalBase64 = rawBase64;
+
+    if(currentDokumentasiSource === 'live') {
+      try {
+        var coords = await getGeoLocation();
+        var address = await getReverseGeocode(coords.lat, coords.lon);
+        showSpinner('Mengecap Watermark GPS Camera...');
+        
+        finalBase64 = await applyWatermark(`data:image/jpeg;base64,${rawBase64.split(',')[1] || rawBase64}`, {
+          lat: coords.lat,
+          lon: coords.lon,
+          address: address
+        });
+        
+        // Remove data URI prefix for the payload as expected by App Script bridge if any
+        finalBase64 = finalBase64.split(',')[1]; 
+      } catch(e) {
+        showToast('Gagal memproses Live Kamera: Pastikan Izin Akses Lokasi (GPS) dinyalakan di browser! Defaulting to original file...', 'warning');
+      }
+    }
+
+    showSpinner('Mengunggah ke Drive...');
+    var res = await callAPI('saveDokumentasi', { data: data, fileData: finalBase64 });
+    
     hideSpinner();
     if (res.success) {
       showToast(res.message, 'success');
       resetFields(['dokumentasi-nama', 'dokumentasi-waktu', 'dokumentasi-kategori']);
-      fileEl.value = '';
-      document.getElementById('dokumentasi-file-info').textContent = '';
+      document.getElementById('dokumentasi-file-live').value = '';
+      document.getElementById('dokumentasi-file-gallery').value = '';
+      currentDokumentasiFile = null;
+      currentDokumentasiSource = null;
+      document.getElementById('dokumentasi-file-info').style.display = 'none';
+      document.getElementById('dokumentasi-gps-status').style.display = 'none';
       togglePanel('dokumentasi-form-panel');
       loadDokumentasi();
     } else {
