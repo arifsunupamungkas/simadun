@@ -418,13 +418,23 @@
             </div>
             <div class="form-group">
               <label>Foto Dokumentasi (.jpg / .png) (Max 5MB) <span class="req">*</span></label>
-              <div class="file-drop" id="dokumentasi-drop">
-                <!-- Accept Camera or Gallery inputs explicitly -->
-                <input type="file" id="dokumentasi-file" accept="image/png, image/jpeg, image/jpg" onchange="handleFileSelect('dokumentasi-file','dokumentasi-file-info')" />
-                <div class="drop-icon"><i class="bi bi-camera-fill"></i></div>
-                <div class="drop-text">Buka Kamera atau Pilih dari Galeri</div>
-                <div class="drop-name" id="dokumentasi-file-info"></div>
+              <div style="display:flex; gap:10px; margin-bottom:10px;">
+                <!-- LIVE CAMERA BTN -->
+                <div style="flex:1; border: 2px dashed #16a34a; background: #f0fdf4; border-radius: 8px; text-align: center; padding: 20px; position:relative; overflow:hidden;">
+                  <input type="file" id="dokumentasi-file-live" accept="image/png, image/jpeg, image/jpg" capture="environment" onchange="handleFileSelectLive()" style="opacity:0; position:absolute; top:0; left:0; width:100%; height:100%; cursor:pointer;" />
+                  <div style="color:#16a34a; font-size:1.5rem; margin-bottom:8px;"><i class="bi bi-camera-fill"></i></div>
+                  <div style="font-weight:bold; color:#166534; font-size:0.8rem;">Potret Live<br>(Watermark & GPS)</div>
+                </div>
+                <!-- GALLERY BTN -->
+                <div style="flex:1; border: 2px dashed var(--border-color); background: var(--bg-hover); border-radius: 8px; text-align: center; padding: 20px; position:relative; overflow:hidden;">
+                  <input type="file" id="dokumentasi-file-gallery" accept="image/png, image/jpeg, image/jpg" onchange="handleFileSelectGallery()" style="opacity:0; position:absolute; top:0; left:0; width:100%; height:100%; cursor:pointer;" />
+                  <div style="color:var(--text-muted); font-size:1.5rem; margin-bottom:8px;"><i class="bi bi-images"></i></div>
+                  <div style="font-weight:bold; color:var(--text-main); font-size:0.8rem;">Pilih Galeri<br>(Arsip Lama)</div>
+                </div>
               </div>
+              <div id="dokumentasi-file-info" style="font-size:0.85rem; color:var(--primary); font-weight:bold; margin-top:5px; padding: 5px 10px; background:var(--primary-lt); border-radius:4px; display:none;"></div>
+              <p id="dokumentasi-gps-status" style="font-size:0.75rem; color:var(--text-muted); margin-top:4px;"><i class="bi bi-info-circle"></i> Mode Live Kamera membutuhkan Izin Lokasi di Browser.</p>
+              <canvas id="watermark-canvas" style="display:none;"></canvas>
             </div>
             <div style="display:flex;gap:10px;justify-content:flex-end">
               <button class="btn-link-custom" onclick="togglePanel('dokumentasi-form-panel')">Batal</button>
