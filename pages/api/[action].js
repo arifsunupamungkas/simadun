@@ -15,7 +15,8 @@ const CONFIG = {
     SURAT_KELUAR: 'Surat Keluar',
     UNDANGAN: 'Undangan',
     SPT: 'SPT',
-    ARSIP: 'Arsip'
+    ARSIP: 'Arsip',
+    DOKUMENTASI: 'Dokumentasi'
   }
 };
 
@@ -93,6 +94,15 @@ export default async function handler(req, res) {
         break;
       case 'deleteSPT':
         result = await deleteRowById(sheets, spreadsheetId, CONFIG.SHEETS.SPT, payload.id);
+        break;
+      case 'saveDokumentasi':
+        result = await saveDokumentasi(sheets, drive, spreadsheetId, rootFolderId, payload.data, payload.fileData);
+        break;
+      case 'getDokumentasi':
+        result = await getSheetData(sheets, spreadsheetId, CONFIG.SHEETS.DOKUMENTASI);
+        break;
+      case 'deleteDokumentasi':
+        result = await deleteRowById(sheets, spreadsheetId, CONFIG.SHEETS.DOKUMENTASI, payload.id);
         break;
       case 'getUsers':
         result = await getUsers(sheets, spreadsheetId);
@@ -387,6 +397,27 @@ async function saveSPT(sheets, drive, spreadsheetId, rootFolderId, data, fileDat
   return { success: true, message: 'SPT berhasil disimpan', id };
 }
 
+async function saveDokumentasi(sheets, drive, spreadsheetId, rootFolderId, data, fileData) {
+  const file = await uploadToDrive(drive, rootFolderId, 'Dokumentasi', fileData);
+  const id = generateId();
+  await sheets.spreadsheets.values.append({
+    spreadsheetId, range: `${CONFIG.SHEETS.DOKUMENTASI}!A1`,
+    valueInputOption: 'USER_ENTERED',
+    resource: {
+      values: [[
+        id, 
+        new Date().toISOString(), 
+        data.waktuPengambilan || '-', 
+        data.jenisDokumentasi || '-', 
+        data.namaDokumentasi || '-', 
+        file.url || '', 
+        file.id || ''
+      ]]
+    }
+  });
+  return { success: true, message: 'Dokumentasi berhasil disimpan', id };
+}
+
 async function updateRowAndFile(sheets, drive, spreadsheetId, rootFolderId, sheetName, id, data, fileData) {
   const res = await sheets.spreadsheets.values.get({ spreadsheetId, range: `${sheetName}!A:M` }); // Ambil M max kolom
   const rows = res.data.values || [];
@@ -561,6 +592,10 @@ async function setupDb(sheets, spreadsheetId) {
       {
         name: CONFIG.SHEETS.ARSIP,
         headers: ['ID', 'Nama File', 'Kategori', 'Folder', 'URL', 'Nama Drive File', 'File ID', 'Deskripsi', 'Ukuran', 'DibuatPada', 'Tanggal Arsip']
+      },
+      {
+        name: CONFIG.SHEETS.DOKUMENTASI,
+        headers: ['ID', 'Tanggal Upload', 'Waktu Pengambilan', 'Jenis Dokumentasi', 'Nama Dokumentasi', 'File URL', 'File ID']
       }
     ];
 
