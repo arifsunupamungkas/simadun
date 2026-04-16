@@ -187,16 +187,18 @@ async function getDashboardData(sheets, spreadsheetId) {
   const arsipData = arsipRows.slice(1);
   const counts = { 
     DUMAS: 0, LHP: 0, MCSP_KPK: 0, PDTT: 0, PKKN: 0, PKTPT: 0,
-    SK_TIM: 0, BAP: 0, PKA: 0, IEPK: 0, NOTA_DINAS: 0, PERBUP: 0
+    SK_TIM: 0, BAP: 0, PKA: 0, IEPK: 0, NOTA_DINAS: 0, PERBUP: 0,
+    UNDANGAN: 0, INDISIPLINER_ASN: 0
   };
 
   arsipData.forEach(row => {
-    const cat = row[catIdx];
+    const rawCat = row[catIdx] || '';
+    const cat = String(rawCat).trim().toUpperCase();
     if (cat === 'DUMAS') counts.DUMAS++;
     else if (cat === 'LHP') counts.LHP++;
     else if (cat === 'MCSP KPK') counts.MCSP_KPK++;
     else if (cat === 'PDTT') counts.PDTT++;
-    else if (cat === 'PKKN') counts.PKKN++;
+    else if (cat === 'PKKN' || cat === 'PEDOMAN AUDIT PENGHITUNGAN KERUGIAN KEUANGAN NEGARA/DAERAH' || cat.includes('KERUGIAN KEUAN')) counts.PKKN++;
     else if (cat === 'PKTPT') counts.PKTPT++;
     else if (cat === 'SK TIM') counts.SK_TIM++;
     else if (cat === 'BERITA ACARA PEMERIKSAAN') counts.BAP++;
@@ -204,6 +206,8 @@ async function getDashboardData(sheets, spreadsheetId) {
     else if (cat === 'IEPK') counts.IEPK++;
     else if (cat === 'NOTA DINAS') counts.NOTA_DINAS++;
     else if (cat === 'PENGAJUAN PERBUP') counts.PERBUP++;
+    else if (cat === 'UNDANGAN') counts.UNDANGAN++;
+    else if (cat === 'INDISIPLINER ASN') counts.INDISIPLINER_ASN++;
   });
 
   return {
@@ -225,7 +229,9 @@ async function getDashboardData(sheets, spreadsheetId) {
     countPka: counts.PKA,
     countIepk: counts.IEPK,
     countNota: counts.NOTA_DINAS,
-    countPerbup: counts.PERBUP
+    countPerbup: counts.PERBUP,
+    countUndanganArsip: counts.UNDANGAN,
+    countIndisipliner: counts.INDISIPLINER_ASN
   };
 }
 
