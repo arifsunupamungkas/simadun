@@ -128,6 +128,10 @@
           <div class="nav-link-item" data-page="arsip" onclick="navigateTo('arsip')"><i class="bi bi-folder-fill"></i>
             Manajemen Arsip</div>
         </li>
+        <li class="nav-item">
+          <div class="nav-link-item" data-page="dokumentasi" onclick="navigateTo('dokumentasi')"><i class="bi bi-camera-fill"></i>
+            Dokumentasi</div>
+        </li>
       </ul>
       <div class="sidebar-section">Administrasi</div>
       <ul style="list-style:none;padding:0;margin:0">
@@ -358,6 +362,88 @@
                     style="color:var(--text-muted)">Tanggal</span><span style="font-weight:600" id="info-date">-</span>
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- DOKUMENTASI -->
+      <div id="page-dokumentasi" class="view" style="display:none">
+        <div class="page-header">
+          <div>
+            <h1>Dokumentasi Kegiatan</h1>
+            <p>Upload foto dan dokumentasi kegiatan Inspektorat</p>
+          </div>
+          <div style="display:flex;gap:10px;">
+            <button class="btn-primary-custom" onclick="togglePanel('dokumentasi-form-panel')"><i class="bi bi-camera"></i>
+              Upload Foto Baru</button>
+          </div>
+        </div>
+        
+        <div class="panel" id="dokumentasi-form-panel" style="display:none">
+          <div class="panel-header">
+            <h3><i class="bi bi-image" style="color:var(--primary)"></i> Upload Foto Dokumentasi</h3>
+            <button onclick="togglePanel('dokumentasi-form-panel')"
+              style="background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:1.2rem"><i
+                class="bi bi-x"></i></button>
+          </div>
+          <div class="panel-body">
+            <div class="form-row">
+              <div class="form-group"><label>Nama Dokumentasi (Acara/Kegiatan) <span class="req">*</span></label><input type="text"
+                  class="form-control-custom" id="dokumentasi-nama" placeholder="Contoh: Rapat Koordinasi Tahunan" /></div>
+              <div class="form-group"><label>Waktu Pengambilan <span class="req">*</span></label><input type="datetime-local"
+                  class="form-control-custom" id="dokumentasi-waktu" /></div>
+            </div>
+            <div class="form-row">
+              <div class="form-group"><label>Jenis Dokumentasi <span class="req">*</span></label>
+                <!-- Opsi yang sama persis dengan kategori Arsip -->
+                <select class="form-control-custom" id="dokumentasi-kategori">
+                  <option value="">-- Pilih Jenis Dokumentasi --</option>
+                  <option value="DUMAS">DUMAS</option>
+                  <option value="LHP">LHP</option>
+                  <option value="MCSP KPK">MCSP KPK</option>
+                  <option value="PDTT">PDTT</option>
+                  <option value="PEDOMAN AUDIT PENGHITUNGAN KERUGIAN KEUANGAN NEGARA/DAERAH">PEDOMAN AUDIT PENGHITUNGAN KERUGIAN KEUANGAN NEGARA/DAERAH</option>
+                  <option value="PKTPT">PKTPT</option>
+                  <option value="SK TIM">SK TIM</option>
+                  <option value="BERITA ACARA PEMERIKSAAN">BERITA ACARA PEMERIKSAAN</option>
+                  <option value="PROGRAM KERJA AUDIT">PROGRAM KERJA AUDIT</option>
+                  <option value="IEPK">IEPK</option>
+                  <option value="NOTA DINAS">NOTA DINAS</option>
+                  <option value="PENGAJUAN PERBUP">PENGAJUAN PERBUP</option>
+                  <option value="UNDANGAN">UNDANGAN</option>
+                  <option value="INDISIPLINER ASN">INDISIPLINER ASN</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Foto Dokumentasi (.jpg / .png) (Max 5MB) <span class="req">*</span></label>
+              <div class="file-drop" id="dokumentasi-drop">
+                <!-- Accept Camera or Gallery inputs explicitly -->
+                <input type="file" id="dokumentasi-file" accept="image/png, image/jpeg, image/jpg" capture="environment" onchange="handleFileSelect('dokumentasi-file','dokumentasi-file-info')" />
+                <div class="drop-icon"><i class="bi bi-camera-fill"></i></div>
+                <div class="drop-text">Buka Kamera atau Pilih dari Galeri</div>
+                <div class="drop-name" id="dokumentasi-file-info"></div>
+              </div>
+            </div>
+            <div style="display:flex;gap:10px;justify-content:flex-end">
+              <button class="btn-link-custom" onclick="togglePanel('dokumentasi-form-panel')">Batal</button>
+              <button class="btn-primary-custom" onclick="submitDokumentasi()"><i class="bi bi-cloud-upload"></i> Upload</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header">
+            <h3><i class="bi bi-images"></i> Galeri Dokumentasi</h3>
+            <div style="display:flex;gap:10px;align-items:center">
+              <button class="btn-primary-custom" onclick="loadDokumentasi()"><i class="bi bi-arrow-clockwise"></i></button>
+            </div>
+          </div>
+          <div class="panel-body" style="padding: 20px;">
+            <div id="dokumentasi-gallery" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px;">
+              <!-- Cards generated dynamically -->
+              <p style="color:var(--text-muted); text-align:center; grid-column: 1 / -1;">Memuat foto dokumentasi...</p>
             </div>
           </div>
         </div>
