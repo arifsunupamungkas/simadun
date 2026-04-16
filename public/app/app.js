@@ -687,8 +687,7 @@ async function submitDokumentasi() {
 
   showSpinner(currentDokumentasiSource === 'live' ? 'Mendeteksi Lokasi Satelit...' : 'Mengunggah Foto...');
   try {
-    var rawBase64 = await readFileAsBase64(currentDokumentasiFile);
-    var finalBase64 = rawBase64;
+    var fileObj = await readFileAsBase64(currentDokumentasiFile);
 
     if(currentDokumentasiSource === 'live') {
       try {
@@ -696,21 +695,22 @@ async function submitDokumentasi() {
         var address = await getReverseGeocode(coords.lat, coords.lon);
         showSpinner('Mengecap Watermark GPS Camera...');
         
-        finalBase64 = await applyWatermark(`data:image/jpeg;base64,${rawBase64.split(',')[1] || rawBase64}`, {
+        var dataUri = 'data:' + fileObj.mimeType + ';base64,' + fileObj.content;
+        var watermarkedDataUri = await applyWatermark(dataUri, {
           lat: coords.lat,
           lon: coords.lon,
           address: address
         });
         
-        // Remove data URI prefix for the payload as expected by App Script bridge if any
-        finalBase64 = finalBase64.split(',')[1]; 
+        // Update the fileObj with the new watermarked base64 string
+        fileObj.content = watermarkedDataUri.split(',')[1]; 
       } catch(e) {
-        showToast('Gagal memproses Live Kamera: Pastikan Izin Akses Lokasi (GPS) dinyalakan di browser! Defaulting to original file...', 'warning');
+        showToast('Gagal memproses Live Kamera: ' + e.message + '. Defaulting to original file...', 'warning');
       }
     }
 
     showSpinner('Mengunggah ke Drive...');
-    var res = await callAPI('saveDokumentasi', { data: data, fileData: finalBase64 });
+    var res = await callAPI('saveDokumentasi', { data: data, fileData: fileObj });
     
     hideSpinner();
     if (res.success) {
