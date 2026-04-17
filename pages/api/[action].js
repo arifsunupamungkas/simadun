@@ -16,7 +16,8 @@ const CONFIG = {
     UNDANGAN: 'Undangan',
     SPT: 'SPT',
     ARSIP: 'Arsip',
-    DOKUMENTASI: 'Dokumentasi'
+    DOKUMENTASI: 'Dokumentasi',
+    MONITORING: 'Monitoring'
   }
 };
 
@@ -103,6 +104,23 @@ export default async function handler(req, res) {
         break;
       case 'deleteDokumentasi':
         result = await deleteRowById(sheets, spreadsheetId, CONFIG.SHEETS.DOKUMENTASI, payload.id);
+        break;
+      case 'getMonitoring':
+        result = await getSheetData(sheets, spreadsheetId, CONFIG.SHEETS.MONITORING);
+        break;
+      case 'saveMonitoring':
+        result = await saveMonitoring(sheets, spreadsheetId, payload.data);
+        break;
+      case 'updateMonitoringTimeline':
+        result = await updateMonitoringTimeline(sheets, spreadsheetId, payload.id, payload.timelineJson, payload.progress);
+        break;
+      case 'deleteMonitoring':
+        result = await deleteRowById(sheets, spreadsheetId, CONFIG.SHEETS.MONITORING, payload.id);
+        break;
+      case 'uploadMonitoringFile':
+        // Custom upload explicitly for timeline attachments
+        result = await uploadToDrive(drive, rootFolderId, 'Monitoring_Berkas', payload.fileData);
+        result.success = true; // Inject success flag so client logic knows it passed
         break;
       case 'getUsers':
         result = await getUsers(sheets, spreadsheetId);
@@ -418,6 +436,42 @@ async function saveDokumentasi(sheets, drive, spreadsheetId, rootFolderId, data,
   return { success: true, message: 'Dokumentasi berhasil disimpan', id };
 }
 
+async function saveMonitoring(sheets, spreadsheetId, data) {
+  const id = generateId();
+  await sheets.spreadsheets.values.append({
+    spreadsheetId, range: `${CONFIG.SHEETS.MONITORING}!A1`,
+    valueInputOption: 'USER_ENTERED',
+    resource: {
+      values: [[
+        id,
+        data.jenisKegiatan,
+        data.namaKegiatan,
+        '[]', // Kosong default (Data Timeline JSON)
+        '0',  // Progress awal 0%
+        new Date().toISOString()
+      ]]
+    }
+  });
+  return { success: true, message: 'Kegiatan Monitoring berhasil dibuat', id };
+}
+
+async function updateMonitoringTimeline(sheets, spreadsheetId, id, timelineJson, progress) {
+  const res = await sheets.spreadsheets.values.get({ spreadsheetId, range: `${CONFIG.SHEETS.MONITORING}!A:F` });
+  const rows = res.data.values || [];
+  const index = rows.findIndex(row => String(row[0]) === String(id));
+  
+  if (index === -1) return { success: false, message: 'Data kegiatan tidak ditemukan' };
+
+  await sheets.spreadsheets.values.update({
+    spreadsheetId,
+    range: `${CONFIG.SHEETS.MONITORING}!D${index + 1}:E${index + 1}`, // Update kolom D (Timeline) dan E (Progress)
+    valueInputOption: 'USER_ENTERED',
+    resource: { values: [[timelineJson, String(progress)]] }
+  });
+
+  return { success: true, message: 'Timeline berhasil diperbarui' };
+}
+
 async function updateRowAndFile(sheets, drive, spreadsheetId, rootFolderId, sheetName, id, data, fileData) {
   const res = await sheets.spreadsheets.values.get({ spreadsheetId, range: `${sheetName}!A:M` }); // Ambil M max kolom
   const rows = res.data.values || [];
@@ -596,6 +650,10 @@ async function setupDb(sheets, spreadsheetId) {
       {
         name: CONFIG.SHEETS.DOKUMENTASI,
         headers: ['ID', 'Tanggal Upload', 'Waktu Pengambilan', 'Jenis Dokumentasi', 'Nama Dokumentasi', 'File URL', 'File ID']
+      },
+      {
+        name: CONFIG.SHEETS.MONITORING,
+        headers: ['ID', 'Jenis Kegiatan', 'Nama Kegiatan', 'Data Timeline', 'Progress', 'DibuatPada']
       }
     ];
 
