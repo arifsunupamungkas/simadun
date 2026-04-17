@@ -132,6 +132,9 @@
           <div class="nav-link-item" data-page="dokumentasi" onclick="navigateTo('dokumentasi')"><i class="bi bi-camera-fill"></i>
             Dokumentasi</div>
         </li>
+        <li class="nav-item">
+          <div class="nav-link-item" data-page="monitoring" onclick="navigateTo('monitoring')"><i class="bi bi-graph-up-arrow"></i> E-Monitoring</div>
+        </li>
       </ul>
       <div class="sidebar-section">Administrasi</div>
       <ul style="list-style:none;padding:0;margin:0">
@@ -457,6 +460,141 @@
               <p style="color:var(--text-muted); text-align:center; grid-column: 1 / -1;">Memuat foto dokumentasi...</p>
             </div>
           </div>
+        </div>
+      </div>
+
+      <!-- MONITORING -->
+      <div id="page-monitoring" class="view" style="display:none;">
+        <div class="page-header">
+          <div>
+            <h1>E-Monitoring Kegiatan</h1>
+            <p>Pantau timeline dan capaian kegiatan secara berjenjang dan interaktif</p>
+          </div>
+          <button class="btn-primary-custom" onclick="togglePanel('monitoring-form-panel')"><i class="bi bi-plus-lg"></i>
+            Tambah Kegiatan</button>
+        </div>
+        
+        <div class="panel" id="monitoring-form-panel" style="display:none">
+          <div class="panel-header">
+            <h3><i class="bi bi-graph-up" style="color:var(--primary)"></i> Input Kegiatan Baru</h3>
+            <button onclick="togglePanel('monitoring-form-panel')" style="background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:1.2rem"><i class="bi bi-x"></i></button>
+          </div>
+          <div class="panel-body">
+            <div class="form-row">
+              <div class="form-group"><label>Kategori Jenis Kegiatan <span class="req">*</span></label>
+                <select class="form-control-custom" id="monitoring-jenis">
+                  <option value="">-- Pilih Jenis Kegiatan --</option>
+                  <option value="DUMAS">DUMAS</option>
+                  <option value="LHP">LHP</option>
+                  <option value="MCSP KPK">MCSP KPK</option>
+                  <option value="PDTT">PDTT</option>
+                  <option value="PEDOMAN AUDIT PENGHITUNGAN KERUGIAN KEUANGAN NEGARA/DAERAH">PEDOMAN AUDIT PENGHITUNGAN KERUGIAN KEUANGAN NEGARA/DAERAH</option>
+                  <option value="PKTPT">PKTPT</option>
+                  <option value="SK TIM">SK TIM</option>
+                  <option value="BERITA ACARA PEMERIKSAAN">BERITA ACARA PEMERIKSAAN</option>
+                  <option value="PROGRAM KERJA AUDIT">PROGRAM KERJA AUDIT</option>
+                  <option value="IEPK">IEPK</option>
+                  <option value="NOTA DINAS">NOTA DINAS</option>
+                  <option value="PENGAJUAN PERBUP">PENGAJUAN PERBUP</option>
+                  <option value="UNDANGAN">UNDANGAN</option>
+                  <option value="INDISIPLINER ASN">INDISIPLINER ASN</option>
+                  <option value="AUDIT KEUANGAN">AUDIT KEUANGAN</option>
+                  <option value="LAINNYA">LAINNYA</option>
+                </select>
+              </div>
+              <div class="form-group"><label>Nama Kegiatan / Perihal <span class="req">*</span></label><input type="text"
+                  class="form-control-custom" id="monitoring-nama" placeholder="Contoh: Audit Keuangan Desa Sukamakmur" /></div>
+            </div>
+            <div style="display:flex;gap:10px;justify-content:flex-end">
+              <button class="btn-link-custom" onclick="togglePanel('monitoring-form-panel')">Batal</button>
+              <button class="btn-primary-custom" onclick="submitMonitoring()"><i class="bi bi-save"></i> Simpan Kegiatan</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- LIST MODE -->
+        <div id="monitoring-list-view">
+          <div class="panel">
+            <div class="panel-header">
+              <h3><i class="bi bi-list-task"></i> Daftar Kegiatan E-Monitoring</h3>
+              <div style="display:flex;gap:10px;align-items:center">
+                <div class="search-bar"><i class="bi bi-search"></i><input type="text" placeholder="Cari kegiatan..." oninput="filterMonitoring(this.value)" /></div>
+                <button class="btn-primary-custom" onclick="loadMonitoring()"><i class="bi bi-arrow-clockwise"></i></button>
+              </div>
+            </div>
+            <div class="custom-table-wrap">
+              <table class="custom-table" id="monitoring-table">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Jenis Kegiatan</th>
+                    <th>Nama Kegiatan</th>
+                    <th>Progress</th>
+                    <th>Dibuat Pada</th>
+                    <th class="action-col">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody id="monitoring-tbody">
+                  <tr class="no-data">
+                    <td colspan="6"><i class="bi bi-inbox" style="font-size:2rem;display:block;margin-bottom:8px"></i>Belum ada kegiatan monitoring</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- DETAIL MODE -->
+        <div id="monitoring-detail-view" style="display:none; transition: opacity 0.3s ease;">
+           <button class="btn-secondary-custom" style="margin-bottom: 20px;" onclick="closeMonitoringDetail()"><i class="bi bi-arrow-left"></i> Kembali ke Daftar Kegiatan</button>
+           
+           <div class="mon-detail-header" style="background:var(--bg-secondary); padding:20px; border-radius:12px; margin-bottom:20px; border-left: 5px solid var(--primary); box-shadow: var(--shadow-sm);">
+              <h2 id="mon-det-title" style="margin:0 0 5px 0;">Judul</h2>
+              <p id="mon-det-jenis" style="margin:0; color:var(--text-muted); font-weight:600;"><i class="bi bi-tag-fill"></i> Jenis</p>
+           </div>
+
+           <div class="monitoring-grid">
+              <!-- KIRI: TIMELINE CHECKLIST (AKSI) -->
+              <div class="panel" style="margin:0;">
+                <div class="panel-header">
+                  <h3><i class="bi bi-card-checklist" style="color:var(--primary)"></i> Tahapan Rencana Aksi</h3>
+                </div>
+                <div class="panel-body">
+                   <div style="display:flex; gap:10px; margin-bottom:24px;">
+                      <input type="text" class="form-control-custom" style="flex:1; border: 2px solid var(--primary-lt);" id="monitoring-add-aksi-input" placeholder="2. Tambahkan Poin Rencana Aksi (Misal: Persiapan Audit)" onkeypress="if(event.key==='Enter') addTimelineAksi()"/>
+                      <button class="btn-primary-custom" onclick="addTimelineAksi()"><i class="bi bi-plus-lg"></i> Tambah</button>
+                   </div>
+                   
+                   <!-- Wadah untuk Rencana Aksi accordion -->
+                   <div id="monitoring-timeline-container" style="display:flex; flex-direction:column; gap:12px;">
+                      <p style="text-align:center; color:var(--text-muted); font-size:0.9rem;">Belum ada rencana aksi.</p>
+                   </div>
+                </div>
+              </div>
+
+              <!-- KANAN: DOUGHNUT CHART -->
+              <div class="panel" style="margin:0; position:sticky; top:80px; align-self: start;">
+                <div class="panel-header" style="justify-content:center;">
+                  <h3><i class="bi bi-pie-chart-fill" style="color:var(--accent)"></i> Capaian Progres</h3>
+                </div>
+                <div class="panel-body" style="padding: 40px 20px; text-align:center;">
+                   <div class="circular-progress-wrap">
+                     <svg class="progress-ring" width="220" height="220" viewBox="0 0 220 220">
+                        <!-- BG Circle -->
+                        <circle class="progress-ring__backdrop" fill="transparent"
+                                stroke-width="16" r="90" cx="110" cy="110"/>
+                        <!-- Foreground Animated Circle -->
+                        <circle class="progress-ring__circle" id="mon-progress-circle" fill="transparent"
+                                stroke-width="16" r="90" cx="110" cy="110" 
+                                stroke-dasharray="565" stroke-dashoffset="565" />
+                     </svg>
+                     <div class="progress-ring__text" id="mon-progress-text">0%</div>
+                   </div>
+                   <h4 style="margin-top:24px; font-size:1.15rem; color:var(--text-main);" id="mon-progress-status-text">Menunggu Dimulai</h4>
+                   <p style="color:var(--text-muted); font-size:0.85rem; margin-top:5px;" id="mon-progress-subtext">Centang item checklist pada sub-rencana aksi untuk melihat pergerakan progres</p>
+                </div>
+              </div>
+           </div>
         </div>
       </div>
 
