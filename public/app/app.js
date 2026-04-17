@@ -96,6 +96,7 @@ var PAGE_TITLES = {
   dashboard: 'Dashboard',
   arsip: 'Manajemen Arsip',
   dokumentasi: 'Dokumentasi',
+  monitoring: 'E-Monitoring Kegiatan',
   surat: 'Manajemen Surat',
   spt: 'Surat Perintah Tugas',
   panduan: 'Panduan Teknis',
@@ -106,6 +107,7 @@ var PAGE_SUBS = {
   dashboard: 'Ringkasan data kearsipan sistem',
   arsip: 'Upload & kelola dokumen arsip',
   dokumentasi: 'Upload foto kegiatan',
+  monitoring: 'Pantau timeline dan capaian progres kegiatan secara interaktif',
   surat: 'Surat Masuk, Keluar & Undangan',
   spt: 'Arsip & Pembuatan SPT Dinas',
   panduan: 'Dokumentasi lengkap fitur SIMADUN',
@@ -126,6 +128,7 @@ function navigateTo(page) {
   if (page === 'dashboard') loadDashboard();
   if (page === 'arsip') loadArsip();
   if (page === 'dokumentasi') loadDokumentasi();
+  if (page === 'monitoring') loadMonitoring();
   if (page === 'surat') { loadSuratMasuk(); loadSuratKeluar(); loadUndangan(); }
   if (page === 'spt') loadSPT();
   if (page === 'pengaturan') {
