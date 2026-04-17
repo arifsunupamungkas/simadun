@@ -1683,6 +1683,338 @@ function resetFields(ids) {
 }
 
 // ══════════════════════════════════════════════════════════
+//  E-MONITORING (TIMELINE & PROGRESS)
+// ══════════════════════════════════════════════════════════
+var monitoringData = [];
+var currentMonitoringId = null;
+
+async function loadMonitoring() {
+  try {
+    var res = await callAPI('getMonitoring', {});
+    var tbody = document.getElementById('monitoring-tbody');
+    if (!res.success || !res.data.length) {
+      tbody.innerHTML = '<tr class="no-data"><td colspan="6"><i class="bi bi-inbox" style="font-size:2rem;display:block;margin-bottom:8px"></i>Belum ada kegiatan monitoring</td></tr>'; 
+      monitoringData = [];
+      return;
+    }
+    monitoringData = res.data;
+    renderMonitoring(monitoringData);
+  } catch (err) {
+    showToast('Gagal memuat e-monitoring', 'error');
+  }
+}
+
+function renderMonitoring(dataArr) {
+  var tbody = document.getElementById('monitoring-tbody');
+  if(!dataArr || !dataArr.length) {
+     tbody.innerHTML = '<tr class="no-data"><td colspan="6"><i class="bi bi-inbox" style="font-size:2rem;display:block;margin-bottom:8px"></i>Belum ada kegiatan monitoring</td></tr>'; 
+     return;
+  }
+  tbody.innerHTML = dataArr.map((d, i) => {
+     var dId = d['ID'];
+     var prog = d['Progress'] || '0';
+     var tgl = d['DibuatPada'] ? new Date(d['DibuatPada']).toLocaleDateString('id-ID') : '-';
+     // Warna bar
+     var barColor = prog == 100 ? 'var(--success)' : (prog > 50 ? 'var(--primary)' : 'var(--accent)');
+     return `<tr>
+       <td>${i+1}</td>
+       <td><span style="font-weight:600; color:var(--primary); font-size:0.8rem;"><i class="bi bi-circle-fill" style="color:${barColor}; font-size:0.5rem; margin-right:4px;"></i>${esc(d['Jenis Kegiatan'])}</span></td>
+       <td style="font-weight:700;">${esc(d['Nama Kegiatan'])}</td>
+       <td style="width:200px;">
+         <div style="display:flex; align-items:center; gap:8px;">
+           <div style="flex:1; height:8px; background:var(--border-color); border-radius:4px; overflow:hidden;">
+             <div style="height:100%; width:${prog}%; background:${barColor}; transition:width 0.5s ease;"></div>
+           </div>
+           <span style="font-size:0.8rem; font-weight:800; color:${barColor};">${prog}%</span>
+         </div>
+       </td>
+       <td><span style="font-size:0.8rem; color:var(--text-muted);">${tgl}</span></td>
+       <td class="action-col">
+         <button class="btn-primary-custom" style="padding:6px 10px; font-size:0.8rem;" onclick="openMonitoringDetail('${dId}')"><i class="bi bi-bar-chart-steps"></i> Buka Timeline</button>
+         <button class="btn-danger-custom" style="padding:6px 8px; font-size:0.8rem;" title="Hapus Kegiatan" onclick="deleteItem('deleteMonitoring','${dId}',loadMonitoring)"><i class="bi bi-trash"></i></button>
+       </td>
+     </tr>`;
+  }).join('');
+}
+
+function filterMonitoring(kw) {
+  if(!kw) return renderMonitoring(monitoringData);
+  var kwl = kw.toLowerCase();
+  renderMonitoring(monitoringData.filter(d => 
+     (d['Nama Kegiatan']||'').toLowerCase().includes(kwl) || 
+     (d['Jenis Kegiatan']||'').toLowerCase().includes(kwl)
+  ));
+}
+
+async function submitMonitoring() {
+  var jenis = document.getElementById('monitoring-jenis').value;
+  var nama = document.getElementById('monitoring-nama').value.trim();
+  if(!jenis || !nama) return showToast('Pilih Jenis dan masukkan Nama Kegiatan', 'error');
+  showSpinner('Menyimpan kegiatan...');
+  try {
+    var res = await callAPI('saveMonitoring', {data: {jenisKegiatan: jenis, namaKegiatan: nama}});
+    hideSpinner();
+    if(res.success) {
+      showToast('Kegiatan berhasil dibuat!', 'success');
+      document.getElementById('monitoring-jenis').value = '';
+      document.getElementById('monitoring-nama').value = '';
+      togglePanel('monitoring-form-panel');
+      loadMonitoring();
+    } else showToast(res.message, 'error');
+  } catch(e) { hideSpinner(); showToast(e.message, 'error'); }
+}
+
+function openMonitoringDetail(id) {
+  var item = monitoringData.find(d => d.ID === id);
+  if(!item) return;
+  currentMonitoringId = id;
+  
+  document.getElementById('mon-det-title').textContent = item['Nama Kegiatan'];
+  document.getElementById('mon-det-jenis').innerHTML = `<i class="bi bi-tag-fill"></i> ${item['Jenis Kegiatan']}`;
+  
+  document.getElementById('monitoring-list-view').style.opacity = '0';
+  setTimeout(() => {
+    document.getElementById('monitoring-list-view').style.display = 'none';
+    document.getElementById('monitoring-detail-view').style.display = 'block';
+    setTimeout(() => document.getElementById('monitoring-detail-view').style.opacity = '1', 50);
+  }, 300);
+  
+  renderMonitoringTimelineUI();
+}
+
+function closeMonitoringDetail() {
+  currentMonitoringId = null;
+  document.getElementById('monitoring-detail-view').style.opacity = '0';
+  setTimeout(() => {
+    document.getElementById('monitoring-detail-view').style.display = 'none';
+    document.getElementById('monitoring-list-view').style.display = 'block';
+    setTimeout(() => document.getElementById('monitoring-list-view').style.opacity = '1', 50);
+  }, 300);
+  loadMonitoring(); // Refresh list to reflect latest progress
+}
+
+function getTimelineData() {
+  var item = monitoringData.find(d => d.ID === currentMonitoringId);
+  if(!item) return [];
+  try {
+    return JSON.parse(item['Data Timeline'] || '[]');
+  } catch(e) { return []; }
+}
+
+function saveTimelineDataLocally(tl) {
+  var item = monitoringData.find(d => d.ID === currentMonitoringId);
+  if(item) item['Data Timeline'] = JSON.stringify(tl);
+}
+
+function toggleAksiCard(el) {
+  el.parentElement.classList.toggle('open');
+}
+
+function renderMonitoringTimelineUI() {
+  var tl = getTimelineData();
+  var cont = document.getElementById('monitoring-timeline-container');
+  if(!tl || tl.length === 0) {
+    cont.innerHTML = '<div style="padding:40px; text-align:center; background:var(--bg-hover); border-radius:12px; border:2px dashed var(--border-color);"><i class="bi bi-layers" style="font-size:2rem;color:var(--text-muted);"></i><p style="color:var(--text-muted); font-size:0.95rem; margin-top:10px;">Belum ada Tahapan Rencana Aksi.<br>Mulai dengan menambahkan poin di atas!</p></div>';
+  } else {
+    cont.innerHTML = tl.map((aksi, i) => `
+      <div class="aksi-card open">
+        <div class="aksi-header" onclick="toggleAksiCard(this)">
+          <h4 style="font-weight:700;"><span style="display:inline-block; width:28px; height:28px; line-height:28px; text-align:center; background:var(--primary); color:#fff; border-radius:50%; font-size:0.8rem; margin-right:8px;">${i+1}</span> ${esc(aksi.title)}</h4>
+          <i class="bi bi-chevron-down" style="transition:transform 0.3sease; font-size:1.2rem; color:var(--text-muted);"></i>
+        </div>
+        <div class="aksi-body">
+          <div id="subitems-${aksi.id}">
+             ${renderSubItems(aksi)}
+          </div>
+          <div style="display:flex; gap:8px; margin-top:20px;">
+            <input type="text" id="add-sub-${aksi.id}" class="form-control-custom" style="flex:1; font-size:0.85rem; padding:8px 12px; background:var(--body-bg);" placeholder="Tulis rincian checklist aksi... (Tekan Enter)" onkeypress="if(event.key==='Enter') addSubItem('${aksi.id}')"/>
+            <button class="btn-primary-custom" style="padding:6px 14px; font-size:0.85rem;" onclick="addSubItem('${aksi.id}')"><i class="bi bi-check2-circle"></i> Tambah Item</button>
+            <button class="btn-link-custom" style="color:#ef4444;" title="Hapus Keseluruhan Aksi Ini" onclick="deleteTimelineAksi('${aksi.id}')"><i class="bi bi-trash"></i></button>
+          </div>
+        </div>
+      </div>
+    `).join('');
+  }
+  recalculateMonitoringProgress(tl);
+}
+
+function renderSubItems(aksi) {
+  if(!aksi.subItems || !aksi.subItems.length) return `<div style="font-size:0.85rem; color:var(--text-muted); text-align:center; padding:10px; background:var(--body-bg); border-radius:6px;">Belum ada rincian checklist pada tahap ini.</div>`;
+  return aksi.subItems.map((sub, idx) => {
+     var isDone = sub.isDone ? 'checked' : '';
+     var doneClass = sub.isDone ? 'done' : '';
+     var filesHtml = (sub.files || []).map(f => `
+        <a href="${f.url}" target="_blank" class="btn-link-custom" style="font-size:0.75rem; padding:4px 10px; background:var(--bg-secondary); color:var(--text-main); border:1px solid var(--border-color); border-radius:15px; text-decoration:none; display:inline-flex; align-items:center; gap:4px; box-shadow:var(--shadow-sm);">
+          <i class="bi bi-cloud-arrow-down-fill" style="color:var(--primary);"></i> ${esc(f.name.substr(0, 20))}${f.name.length>20?'...':''}
+        </a>
+     `).join('');
+     
+     return `
+       <div class="sub-checklist-item ${doneClass}">
+         <input type="checkbox" class="checklist-checkbox" ${isDone} onchange="toggleSubItem('${aksi.id}', '${sub.id}', this.checked)"/>
+         <div class="sub-content">
+           <div class="sub-title">${idx+1}. ${esc(sub.title)}</div>
+           <div class="sub-actions">
+             ${filesHtml}
+             <label style="cursor:pointer; display:inline-flex; align-items:center; gap:6px; font-size:0.75rem; font-weight:600; color:var(--accent); padding:4px 10px; border:1px dashed var(--accent); border-radius:15px; transition:0.2s; background:rgba(234, 88, 12, 0.05);" onmouseover="this.style.background='rgba(234, 88, 12, 0.1)'" onmouseout="this.style.background='rgba(234, 88, 12, 0.05)'">
+               <input type="file" style="display:none;" onchange="uploadSubItemFile('${aksi.id}', '${sub.id}', this)" accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"/>
+               <i class="bi bi-paperclip"></i> Upload Bukti
+             </label>
+             <button onclick="deleleSubItem('${aksi.id}', '${sub.id}')" style="margin-left:auto; background:none; border:none; cursor:pointer; color:#ef4444; font-size:1rem;" title="Hapus Item"><i class="bi bi-x-circle-fill"></i></button>
+           </div>
+         </div>
+       </div>
+     `;
+  }).join('');
+}
+
+async function addTimelineAksi() {
+  var input = document.getElementById('monitoring-add-aksi-input');
+  var val = input.value.trim();
+  if(!val) return;
+  var tl = getTimelineData();
+  tl.push({ id: 'AKSI_' + Date.now(), title: val, subItems: [] });
+  saveTimelineDataLocally(tl);
+  input.value = '';
+  renderMonitoringTimelineUI();
+  await syncMonitoringTimeline(tl);
+}
+
+async function deleteTimelineAksi(aksiId) {
+  if(!confirm('Anda yakin ingin menghapus seluruh Tahapan Aksi ini beserta seluruh checklist di dalamnya?')) return;
+  var tl = getTimelineData();
+  tl = tl.filter(a => a.id !== aksiId);
+  saveTimelineDataLocally(tl);
+  renderMonitoringTimelineUI();
+  await syncMonitoringTimeline(tl);
+}
+
+async function addSubItem(aksiId) {
+  var input = document.getElementById('add-sub-' + aksiId);
+  if(!input) return;
+  var val = input.value.trim();
+  if(!val) return;
+  var tl = getTimelineData();
+  var aksi = tl.find(a => a.id === aksiId);
+  if(aksi) {
+    if(!aksi.subItems) aksi.subItems = [];
+    aksi.subItems.push({ id: 'SUB_' + Date.now(), title: val, isDone: false, files: [] });
+    saveTimelineDataLocally(tl);
+    input.value = '';
+    renderMonitoringTimelineUI();
+    await syncMonitoringTimeline(tl);
+  }
+}
+
+async function deleleSubItem(aksiId, subId) {
+  if(!confirm('Hapus rincian checklist ini?')) return;
+  var tl = getTimelineData();
+  var aksi = tl.find(a => a.id === aksiId);
+  if(aksi) {
+    aksi.subItems = aksi.subItems.filter(s => s.id !== subId);
+    saveTimelineDataLocally(tl);
+    renderMonitoringTimelineUI();
+    await syncMonitoringTimeline(tl);
+  }
+}
+
+async function toggleSubItem(aksiId, subId, isChecked) {
+  var tl = getTimelineData();
+  var aksi = tl.find(a => a.id === aksiId);
+  if(aksi) {
+    var sub = aksi.subItems.find(s => s.id === subId);
+    if(sub) sub.isDone = isChecked;
+    saveTimelineDataLocally(tl);
+    renderMonitoringTimelineUI(); // updates UI & recalculates progress
+    await syncMonitoringTimeline(tl);
+  }
+}
+
+async function uploadSubItemFile(aksiId, subId, inputEl) {
+  if(!inputEl.files || !inputEl.files.length) return;
+  var file = inputEl.files[0];
+  if(file.size > 10*1024*1024) return showToast('Ukuran file maksimal 10MB', 'error');
+  
+  showSpinner('Mengunggah bukti: ' + file.name + ' ...');
+  try {
+    var fd = await readFileAsBase64(file);
+    var res = await callAPI('uploadMonitoringFile', { fileData: fd });
+    hideSpinner();
+    if(res.success && res.url) {
+       var tl = getTimelineData();
+       var aksi = tl.find(a => a.id === aksiId);
+       if(aksi) {
+         var sub = aksi.subItems.find(s => s.id === subId);
+         if(sub) {
+           if(!sub.files) sub.files = [];
+           sub.files.push({ name: file.name, url: res.url, id: res.id });
+           saveTimelineDataLocally(tl);
+           renderMonitoringTimelineUI();
+           await syncMonitoringTimeline(tl);
+           showToast('File lampiran berhasil ditambahkan!', 'success');
+         }
+       }
+    } else throw new Error(res.message || 'Gagal tersimpan di Cloud');
+  } catch(e) { hideSpinner(); showToast(e.message, 'error'); }
+  inputEl.value = '';
+}
+
+function recalculateMonitoringProgress(tl) {
+  var total = 0;
+  var done = 0;
+  tl.forEach(aksi => {
+    if(aksi.subItems && aksi.subItems.length > 0) {
+      total += aksi.subItems.length;
+      done += aksi.subItems.filter(s => s.isDone).length;
+    }
+  });
+  
+  var pct = total === 0 ? 0 : Math.round((done / total) * 100);
+  
+  var item = monitoringData.find(d => d.ID === currentMonitoringId);
+  if(item) item['Progress'] = String(pct);
+
+  var circle = document.getElementById('mon-progress-circle');
+  var txt = document.getElementById('mon-progress-text');
+  var status = document.getElementById('mon-progress-status-text');
+  
+  if(circle && txt) {
+     var circumference = 565; // Matches SVG dasharray for r=90
+     var offset = circumference - (pct / 100) * circumference;
+     circle.style.strokeDashoffset = offset;
+     txt.textContent = pct + '%';
+     
+     // Dynamic Color Scale
+     let color = "var(--text-muted)";
+     if (total > 0) {
+       if (pct === 100) { color = "#16a34a"; status.textContent = "Tuntas 100%!"; status.style.color = color; } // Green
+       else if (pct >= 50) { color = "#2563eb"; status.textContent = "Sedang Berjalan"; status.style.color = color; } // Blue
+       else if (pct > 0) { color = "#ea580c"; status.textContent = "Baru Dimulai"; status.style.color = color; } // Orange
+       else { color = "#64748b"; status.textContent = "Menunggu Realisasi"; status.style.color = color; }
+     } else {
+       status.textContent = "Menunggu Timeline";
+       status.style.color = "var(--text-muted)";
+     }
+     
+     circle.style.stroke = color;
+     txt.style.color = color;
+  }
+  
+  return pct;
+}
+
+var monSyncTimer = null;
+async function syncMonitoringTimeline(tl) {
+  var pct = recalculateMonitoringProgress(tl);
+  clearTimeout(monSyncTimer);
+  monSyncTimer = setTimeout(async function() {
+    try {
+      await callAPI('updateMonitoringTimeline', { id: currentMonitoringId, timelineJson: JSON.stringify(tl), progress: pct });
+    } catch(e) { console.error('Gagal sinkron timeline', e); }
+  }, 1000);
+}
+
+// ══════════════════════════════════════════════════════════
 //  DRAG & DROP EVENTS & INITS
 // ══════════════════════════════════════════════════════════
 document.addEventListener('DOMContentLoaded', function () {
