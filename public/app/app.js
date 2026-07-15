@@ -1230,6 +1230,42 @@ function openEditModal(sheetType, dataEnc) {
       <div class="form-group"><label>Jabatan Target</label><input type="text" id="ed-spt-jab" class="form-control-custom" value="${esc(d['Jabatan'])}"></div>
       <div class="form-group"><label>Keperluan</label><input type="text" id="ed-spt-kep" class="form-control-custom" value="${esc(d['Keperluan'])}"></div>
       <div class="form-group"><label>Keterangan</label><input type="text" id="ed-spt-ket" class="form-control-custom" value="${esc(d['Keterangan'])}"></div>`;
+  } else if (sheetType === 'Monitoring') {
+    var batasVal = d['Batas Waktu'] || '';
+    var defaultDate = '';
+    var defaultTime = '';
+    if (batasVal) {
+      var parts = batasVal.split('T');
+      defaultDate = parts[0] || '';
+      defaultTime = parts[1] || '';
+    }
+    html = `<div class="grid-2">
+        <div class="form-group"><label>Nama Kegiatan</label><input type="text" id="ed-mon-nama" class="form-control-custom" value="${esc(d['Nama Kegiatan'])}"></div>
+        <div class="form-group"><label>Kategori Jenis Kegiatan</label>
+          <select id="ed-mon-jenis" class="form-control-custom">
+            <option value="DUMAS" ${d['Jenis Kegiatan']==='DUMAS'?'selected':''}>DUMAS</option>
+            <option value="LHP" ${d['Jenis Kegiatan']==='LHP'?'selected':''}>LHP</option>
+            <option value="MCSP KPK" ${d['Jenis Kegiatan']==='MCSP KPK'?'selected':''}>MCSP KPK</option>
+            <option value="PDTT" ${d['Jenis Kegiatan']==='PDTT'?'selected':''}>PDTT</option>
+            <option value="PEDOMAN AUDIT PENGHITUNGAN KERUGIAN KEUANGAN NEGARA/DAERAH" ${d['Jenis Kegiatan']==='PEDOMAN AUDIT PENGHITUNGAN KERUGIAN KEUANGAN NEGARA/DAERAH'?'selected':''}>PEDOMAN AUDIT PENGHITUNGAN KERUGIAN KEUANGAN NEGARA/DAERAH</option>
+            <option value="PKTPT" ${d['Jenis Kegiatan']==='PKTPT'?'selected':''}>PKTPT</option>
+            <option value="SK TIM" ${d['Jenis Kegiatan']==='SK TIM'?'selected':''}>SK TIM</option>
+            <option value="BERITA ACARA PEMERIKSAAN" ${d['Jenis Kegiatan']==='BERITA ACARA PEMERIKSAAN'?'selected':''}>BERITA ACARA PEMERIKSAAN</option>
+            <option value="PROGRAM KERJA AUDIT" ${d['Jenis Kegiatan']==='PROGRAM KERJA AUDIT'?'selected':''}>PROGRAM KERJA AUDIT</option>
+            <option value="IEPK" ${d['Jenis Kegiatan']==='IEPK'?'selected':''}>IEPK</option>
+            <option value="NOTA DINAS" ${d['Jenis Kegiatan']==='NOTA DINAS'?'selected':''}>NOTA DINAS</option>
+            <option value="PENGAJUAN PERBUP" ${d['Jenis Kegiatan']==='PENGAJUAN PERBUP'?'selected':''}>PENGAJUAN PERBUP</option>
+            <option value="UNDANGAN" ${d['Jenis Kegiatan']==='UNDANGAN'?'selected':''}>UNDANGAN</option>
+            <option value="INDISIPLINER ASN" ${d['Jenis Kegiatan']==='INDISIPLINER ASN'?'selected':''}>INDISIPLINER ASN</option>
+            <option value="AUDIT KEUANGAN" ${d['Jenis Kegiatan']==='AUDIT KEUANGAN'?'selected':''}>AUDIT KEUANGAN</option>
+            <option value="LAINNYA" ${d['Jenis Kegiatan']==='LAINNYA'?'selected':''}>LAINNYA</option>
+          </select>
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="form-group"><label>Tanggal Batas Penyelesaian</label><input type="date" id="ed-mon-batas-tanggal" class="form-control-custom" value="${defaultDate}"></div>
+        <div class="form-group"><label>Jam Batas Penyelesaian</label><input type="time" id="ed-mon-batas-jam" class="form-control-custom" value="${defaultTime}"></div>
+      </div>`;
   }
 
   c.innerHTML = html;
@@ -1710,19 +1746,51 @@ async function loadMonitoring() {
 function renderMonitoring(dataArr) {
   var tbody = document.getElementById('monitoring-tbody');
   if(!dataArr || !dataArr.length) {
-     tbody.innerHTML = '<tr class="no-data"><td colspan="6"><i class="bi bi-inbox" style="font-size:2rem;display:block;margin-bottom:8px"></i>Belum ada kegiatan monitoring</td></tr>'; 
+     tbody.innerHTML = '<tr class="no-data"><td colspan="7"><i class="bi bi-inbox" style="font-size:2rem;display:block;margin-bottom:8px"></i>Belum ada kegiatan monitoring</td></tr>'; 
+     document.getElementById('monitoring-overdue-alert').style.display = 'none';
      return;
   }
+  
+  var totalOverdue = 0;
+  var now = new Date();
+
   tbody.innerHTML = dataArr.map((d, i) => {
      var dId = d['ID'];
      var prog = d['Progress'] || '0';
      var tgl = d['DibuatPada'] ? new Date(d['DibuatPada']).toLocaleDateString('id-ID') : '-';
+     
+     // Batas waktu formatting and check
+     var deadlineStr = '-';
+     var isOverdue = false;
+     if (d['Batas Waktu']) {
+       var dTime = new Date(d['Batas Waktu']);
+       if (!isNaN(dTime.getTime())) {
+         deadlineStr = dTime.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) + ' ' + dTime.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+         if (now > dTime && prog != "100") {
+           isOverdue = true;
+           totalOverdue++;
+         }
+       }
+     }
+     
+     // Warna batas waktu cell
+     var deadlineHtml = '';
+     if (isOverdue) {
+       deadlineHtml = `<span style="color:#ef4444; font-weight:750; display:inline-flex; align-items:center; gap:4px;"><i class="bi bi-exclamation-triangle-fill"></i> ${deadlineStr}</span>`;
+     } else if (prog == 100) {
+       deadlineHtml = `<span style="color:var(--success); font-weight:600; display:inline-flex; align-items:center; gap:4px;"><i class="bi bi-check-circle-fill"></i> ${deadlineStr}</span>`;
+     } else {
+       deadlineHtml = `<span style="color:var(--text-main);">${deadlineStr}</span>`;
+     }
+
+     var safeData = encodeURIComponent(JSON.stringify(d));
+
      // Warna bar
      var barColor = prog == 100 ? 'var(--success)' : (prog > 50 ? 'var(--primary)' : 'var(--accent)');
      return `<tr>
        <td>${i+1}</td>
        <td><span style="font-weight:600; color:var(--primary); font-size:0.8rem;"><i class="bi bi-circle-fill" style="color:${barColor}; font-size:0.5rem; margin-right:4px;"></i>${esc(d['Jenis Kegiatan'])}</span></td>
-       <td style="font-weight:700;">${esc(d['Nama Kegiatan'])}</td>
+       <td style="font-weight:700;">${esc(d['Nama Kegiatan'])} ${isOverdue ? '<span class="badge-cat error" style="background:#dc2626; color:#fff; font-size:0.7rem; padding:2px 6px; border-radius:4px; margin-left:6px;"><i class="bi bi-clock-history"></i> Terlambat</span>' : ''}</td>
        <td style="width:200px;">
          <div style="display:flex; align-items:center; gap:8px;">
            <div style="flex:1; height:8px; background:var(--border-color); border-radius:4px; overflow:hidden;">
@@ -1731,13 +1799,24 @@ function renderMonitoring(dataArr) {
            <span style="font-size:0.8rem; font-weight:800; color:${barColor};">${prog}%</span>
          </div>
        </td>
+       <td>${deadlineHtml}</td>
        <td><span style="font-size:0.8rem; color:var(--text-muted);">${tgl}</span></td>
        <td class="action-col">
          <button class="btn-primary-custom" style="padding:6px 10px; font-size:0.8rem;" onclick="openMonitoringDetail('${dId}')"><i class="bi bi-bar-chart-steps"></i> Buka Timeline</button>
+         <button class="btn-warning-custom" style="padding:6px 8px; font-size:0.8rem;" title="Edit Kegiatan" onclick="openEditModal('Monitoring', '${safeData}')"><i class="bi bi-pencil"></i></button>
          <button class="btn-danger-custom" style="padding:6px 8px; font-size:0.8rem;" title="Hapus Kegiatan" onclick="deleteItem('deleteMonitoring','${dId}',loadMonitoring)"><i class="bi bi-trash"></i></button>
        </td>
      </tr>`;
   }).join('');
+
+  var overdueAlert = document.getElementById('monitoring-overdue-alert');
+  if (totalOverdue > 0) {
+    document.getElementById('monitoring-overdue-text').textContent = `Terdapat ${totalOverdue} kegiatan yang telah melewati batas waktu penyelesaian. Segera tindak lanjuti!`;
+    overdueAlert.style.display = 'flex';
+    showToast('Ada ' + totalOverdue + ' kegiatan monitoring yang sudah melewati batas waktu!', 'error');
+  } else {
+    overdueAlert.style.display = 'none';
+  }
 }
 
 function filterMonitoring(kw) {
@@ -1752,15 +1831,23 @@ function filterMonitoring(kw) {
 async function submitMonitoring() {
   var jenis = document.getElementById('monitoring-jenis').value;
   var nama = document.getElementById('monitoring-nama').value.trim();
+  var tgl = document.getElementById('monitoring-batas-tanggal').value;
+  var jam = document.getElementById('monitoring-batas-jam').value;
   if(!jenis || !nama) return showToast('Pilih Jenis dan masukkan Nama Kegiatan', 'error');
+  if(!tgl || !jam) return showToast('Masukkan Tanggal dan Jam batas penyelesaian', 'error');
+  
+  var batasWaktu = tgl + 'T' + jam; // combined "YYYY-MM-DDTHH:MM"
+
   showSpinner('Menyimpan kegiatan...');
   try {
-    var res = await callAPI('saveMonitoring', {data: {jenisKegiatan: jenis, namaKegiatan: nama}});
+    var res = await callAPI('saveMonitoring', {data: {jenisKegiatan: jenis, namaKegiatan: nama, batasWaktu: batasWaktu}});
     hideSpinner();
     if(res.success) {
       showToast('Kegiatan berhasil dibuat!', 'success');
       document.getElementById('monitoring-jenis').value = '';
       document.getElementById('monitoring-nama').value = '';
+      document.getElementById('monitoring-batas-tanggal').value = '';
+      document.getElementById('monitoring-batas-jam').value = '';
       togglePanel('monitoring-form-panel');
       loadMonitoring();
     } else showToast(res.message, 'error');
