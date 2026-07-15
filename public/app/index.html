@@ -505,6 +505,16 @@
               <div class="form-group"><label>Nama Kegiatan / Perihal <span class="req">*</span></label><input type="text"
                   class="form-control-custom" id="monitoring-nama" placeholder="Contoh: Audit Keuangan Desa Sukamakmur" /></div>
             </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Tanggal Batas Penyelesaian <span class="req">*</span></label>
+                <input type="date" class="form-control-custom" id="monitoring-batas-tanggal" />
+              </div>
+              <div class="form-group">
+                <label>Jam Batas Penyelesaian <span class="req">*</span></label>
+                <input type="time" class="form-control-custom" id="monitoring-batas-jam" />
+              </div>
+            </div>
             <div style="display:flex;gap:10px;justify-content:flex-end">
               <button class="btn-link-custom" onclick="togglePanel('monitoring-form-panel')">Batal</button>
               <button class="btn-primary-custom" onclick="submitMonitoring()"><i class="bi bi-save"></i> Simpan Kegiatan</button>
@@ -514,6 +524,17 @@
 
         <!-- LIST MODE -->
         <div id="monitoring-list-view">
+          <!-- Overdue Warning Banner -->
+          <div id="monitoring-overdue-alert" style="display:none; margin-bottom: 20px; background: linear-gradient(135deg, #fef2f2, #fee2e2); border-left: 5px solid #dc2626; padding: 15px 20px; border-radius: 12px; box-shadow: var(--shadow-sm); display: flex; align-items: center; gap: 15px;">
+            <div style="background:#dc2626; color:#fff; width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:1.2rem; flex-shrink: 0;">
+              <i class="bi bi-exclamation-triangle-fill"></i>
+            </div>
+            <div style="flex:1;">
+              <h4 style="margin:0 0 2px 0; color:#991b1b; font-weight:850; font-size:1rem;">Peringatan Batas Waktu!</h4>
+              <p style="margin:0; color:#7f1d1d; font-size:0.85rem;" id="monitoring-overdue-text">Terdapat X kegiatan yang telah melewati batas waktu penyelesaian. Segera tindak lanjuti!</p>
+            </div>
+          </div>
+
           <div class="panel">
             <div class="panel-header">
               <h3><i class="bi bi-list-task"></i> Daftar Kegiatan E-Monitoring</h3>
@@ -530,13 +551,14 @@
                     <th>Jenis Kegiatan</th>
                     <th>Nama Kegiatan</th>
                     <th>Progress</th>
+                    <th>Batas Waktu</th>
                     <th>Dibuat Pada</th>
                     <th class="action-col">Aksi</th>
                   </tr>
                 </thead>
                 <tbody id="monitoring-tbody">
                   <tr class="no-data">
-                    <td colspan="6"><i class="bi bi-inbox" style="font-size:2rem;display:block;margin-bottom:8px"></i>Belum ada kegiatan monitoring</td>
+                    <td colspan="7"><i class="bi bi-inbox" style="font-size:2rem;display:block;margin-bottom:8px"></i>Belum ada kegiatan monitoring</td>
                   </tr>
                 </tbody>
               </table>
